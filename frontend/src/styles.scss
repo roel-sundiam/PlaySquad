@@ -1,0 +1,513 @@
+// Import our new design system
+@import './assets/scss/variables';
+@import './assets/scss/mixins';
+@import './assets/scss/utilities';
+
+// Global styles
+* {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: $font-family-primary;
+  font-size: $text-base;
+  line-height: $leading-normal;
+  color: $text-primary;
+  background: linear-gradient(135deg, #64748b 0%, #94a3b8 50%, #cbd5e1 100%);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Application Layout
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+  max-width: 1200px;
+  margin: $space-4 auto;
+  padding: $space-6 $space-6 $space-12;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  width: calc(100% - #{$space-8});
+  
+  @include max-md {
+    margin: $space-2 auto;
+    padding: $space-4 $space-4 $space-8;
+    border-radius: 12px;
+    width: calc(100% - #{$space-4});
+  }
+  
+  @include max-sm {
+    margin: $space-1 auto;
+    padding: $space-3 $space-3 $space-6;
+    border-radius: 8px;
+    width: calc(100% - #{$space-2});
+  }
+}
+
+// Enhanced Button Styles using our design system
+.btn-primary-large {
+  @include btn-primary;
+  @include btn-lg;
+  font-weight: $font-weight-semibold;
+  
+  &:hover {
+    transform: translateY(-2px);
+  }
+}
+
+.btn-secondary-medium {
+  @include btn-secondary;
+  font-weight: $font-weight-medium;
+}
+
+// Hero Section
+.hero-section {
+  @include card-elevated;
+  padding: $space-8;
+  margin-bottom: $space-8;
+  background: linear-gradient(135deg, rgba(251, 146, 60, 0.15) 0%, rgba(34, 197, 94, 0.1) 50%, rgba(59, 130, 246, 0.1) 100%);
+  border: 1px solid rgba(251, 146, 60, 0.3);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+.hero-greeting {
+  @include flex-between;
+  align-items: flex-start;
+  gap: $space-6;
+  margin-bottom: $space-6;
+
+  @include max-md {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+}
+
+.hero-content {
+  flex: 1;
+}
+
+.hero-title {
+  @include text-heading-1;
+  color: #1e293b;
+  margin-bottom: $space-2;
+  
+  .highlight {
+    background: linear-gradient(135deg, #fb923c, #f59e0b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+.hero-subtitle {
+  @include text-body;
+  color: #475569;
+  margin-bottom: $space-6;
+}
+
+.hero-avatar {
+  flex-shrink: 0;
+  
+  @include max-md {
+    order: -1;
+  }
+}
+
+.avatar-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: $radius-full;
+  background: linear-gradient(135deg, $primary-500, $secondary-500);
+  @include flex-center;
+  color: $text-inverse;
+  font-size: $text-2xl;
+  font-weight: $font-weight-bold;
+  box-shadow: $shadow-lg;
+  border: 3px solid $bg-primary;
+  position: relative;
+  
+  @include md {
+    width: 96px;
+    height: 96px;
+    font-size: $text-3xl;
+  }
+}
+
+.status-indicator {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  width: 16px;
+  height: 16px;
+  background: $success-500;
+  border-radius: $radius-full;
+  border: 3px solid $bg-primary;
+  box-shadow: $shadow-sm;
+}
+
+// Dashboard Grid
+.dashboard-grid {
+  @include grid-responsive;
+  margin-bottom: $space-8;
+}
+
+// Stats Cards
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $space-3;
+  margin-bottom: $space-8;
+  
+  @include sm {
+    grid-template-columns: repeat(2, 1fr);
+    gap: $space-4;
+  }
+  
+  @include lg {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.stat-card {
+  @include card-elevated;
+  padding: $space-6;
+  @include flex-center;
+  gap: $space-4;
+  min-height: 120px;
+  transition: all $transition-base;
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+    background: rgba(255, 255, 255, 0.35);
+  }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100%;
+    background: linear-gradient(45deg, transparent 50%, rgba(255, 255, 255, 0.15) 100%);
+    pointer-events: none;
+  }
+}
+
+.stat-icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: $radius-xl;
+  @include flex-center;
+  transition: transform $transition-base;
+  
+  svg {
+    width: 24px;
+    height: 24px;
+    stroke-width: 2;
+  }
+}
+
+.stat-content {
+  flex: 1;
+  text-align: left;
+}
+
+.stat-number {
+  @include text-heading-2;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1;
+}
+
+.stat-label {
+  @include text-body-sm;
+  color: #475569;
+  margin: 0;
+  margin-top: $space-1;
+}
+
+// Stat card variants
+.clubs-stat {
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  
+  .stat-icon {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: #ffffff;
+    box-shadow: 0 8px 25px rgba(34, 197, 94, 0.3);
+  }
+}
+
+.games-stat {
+  border: 1px solid rgba(251, 146, 60, 0.4);
+  
+  .stat-icon {
+    background: linear-gradient(135deg, #fb923c, #f59e0b);
+    color: #ffffff;
+    box-shadow: 0 8px 25px rgba(251, 146, 60, 0.3);
+  }
+}
+
+.skill-stat {
+  border: 1px solid rgba(251, 146, 60, 0.4);
+  
+  .stat-icon {
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    color: #ffffff;
+    box-shadow: 0 8px 25px rgba(251, 146, 60, 0.3);
+  }
+}
+
+.winrate-stat {
+  border: 1px solid rgba(251, 146, 60, 0.4);
+  
+  .stat-icon {
+    background: linear-gradient(135deg, #fb923c, #f59e0b);
+    color: #ffffff;
+    box-shadow: 0 8px 25px rgba(251, 146, 60, 0.3);
+  }
+}
+
+// Content Cards
+.content-card {
+  @include card-base;
+  overflow: hidden;
+  margin-bottom: $space-6;
+  background: linear-gradient(135deg, rgba(251, 146, 60, 0.08) 0%, rgba(255, 255, 255, 0.2) 100%);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(251, 146, 60, 0.2);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+  padding: $space-6 $space-6 $space-4;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
+}
+
+.card-title {
+  @include text-heading-3;
+  margin: 0;
+  color: #000000;
+  
+  @include flex-between;
+  align-items: center;
+}
+
+.card-content {
+  padding: $space-6;
+}
+
+// Lists
+.item-list {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.list-item {
+  @include card-interactive;
+  padding: $space-4 $space-5;
+  transition: all $transition-base;
+  background: linear-gradient(135deg, rgba(251, 146, 60, 0.15) 0%, rgba(249, 115, 22, 0.1) 100%);
+  border: 1px solid rgba(251, 146, 60, 0.3);
+  backdrop-filter: blur(10px);
+  
+  &:hover {
+    transform: translateY(-2px);
+    border-color: rgba(251, 146, 60, 0.8);
+    background: linear-gradient(135deg, rgba(251, 146, 60, 0.25) 0%, rgba(249, 115, 22, 0.2) 100%);
+    box-shadow: 0 8px 25px rgba(251, 146, 60, 0.2);
+  }
+}
+
+.item-header {
+  @include flex-between;
+  align-items: flex-start;
+  margin-bottom: $space-2;
+}
+
+.item-title {
+  @include text-heading-4;
+  margin: 0;
+  color: #1e293b;
+}
+
+.item-meta {
+  @include text-body-sm;
+  color: #475569;
+  margin: 0;
+}
+
+.item-actions {
+  display: flex;
+  gap: $space-2;
+  align-items: center;
+}
+
+// Badges
+.badge {
+  @include text-caption;
+  padding: $space-1 $space-3;
+  border-radius: $radius-full;
+  font-weight: $font-weight-medium;
+  
+  &.primary {
+    background: $primary-100;
+    color: $primary-700;
+    border: 1px solid $primary-200;
+  }
+  
+  &.success {
+    background: $success-100;
+    color: $success-700;
+    border: 1px solid $success-200;
+  }
+  
+  &.warning {
+    background: $warning-100;
+    color: $warning-700;
+    border: 1px solid $warning-200;
+  }
+  
+  &.secondary {
+    background: $gray-100;
+    color: $gray-700;
+    border: 1px solid $gray-200;
+  }
+}
+
+// Progress bars
+.progress-container {
+  margin-top: $space-3;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: $gray-200;
+  border-radius: $radius-full;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, $success-500, $success-400);
+  border-radius: $radius-full;
+  transition: width 1s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+    animation: shimmer 2s infinite;
+  }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+// Action buttons in hero
+.hero-actions {
+  display: flex;
+  gap: $space-4;
+  flex-wrap: wrap;
+  
+  @include max-sm {
+    gap: $space-3;
+    width: 100%;
+  }
+}
+
+// Empty states
+.empty-state {
+  text-align: center;
+  padding: $space-12 $space-6;
+  color: #475569;
+  
+  svg {
+    width: 64px;
+    height: 64px;
+    color: #64748b;
+    margin-bottom: $space-4;
+  }
+  
+  h3 {
+    @include text-heading-4;
+    color: #1e293b;
+    margin-bottom: $space-2;
+  }
+  
+  p {
+    @include text-body;
+    color: #475569;
+    margin-bottom: $space-6;
+  }
+}
+
+// Loading states
+.loading-card {
+  @include card-base;
+  padding: $space-6;
+  @include loading-shimmer;
+  height: 120px;
+}
+
+// Focus styles for accessibility
+button:focus-visible,
+a:focus-visible,
+.btn:focus-visible {
+  @include focus-ring;
+}
+
+// Utility overrides
+.text-gradient {
+  background: linear-gradient(135deg, $primary-600, $secondary-600);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+// Responsive utilities
+@include max-sm {
+  .hero-title {
+    font-size: $text-2xl;
+  }
+  
+  .hero-section {
+    padding: $space-6;
+    margin-bottom: $space-6;
+  }
+  
+  .dashboard-grid {
+    gap: $space-4;
+  }
+}
