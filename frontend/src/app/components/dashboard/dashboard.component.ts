@@ -16,8 +16,8 @@ import { EventService, Event } from '../../services/event.service';
         <section class="hero-section" *ngIf="user">
           <div class="hero-greeting">
             <div class="hero-avatar">
-              <div class="avatar-circle">
-                <span>{{ user?.firstName?.charAt(0) || 'U' }}</span>
+              <div class="logo-container">
+                <img src="assets/playsquad-logo.png" alt="PlaySquad Logo" class="app-logo">
                 <div class="status-indicator"></div>
               </div>
             </div>
@@ -351,6 +351,40 @@ import { EventService, Event } from '../../services/event.service';
 
     .event-cancelled .event-date-badge {
       opacity: 0.6;
+    }
+
+    // Logo Container (replacing avatar)
+    .logo-container {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+
+    .app-logo {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      object-position: center;
+    }
+
+    .logo-container .status-indicator {
+      position: absolute;
+      bottom: 4px;
+      right: 4px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #22c55e;
+      border: 2px solid #ffffff;
+      box-shadow: 0 2px 8px rgba(34, 197, 94, 0.4);
     }
 
   `]

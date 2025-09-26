@@ -30,11 +30,61 @@ ng build --watch     # Continuous build during development
 ### Database Management
 ```bash
 # Custom utility scripts in backend/src/scripts/
-node src/scripts/clearClubs.js                    # Clear all clubs
+node src/scripts/clearAllData.js                  # Clear ALL data (clubs, events, messages, analytics, coins)
+node src/scripts/clearAllData.js --verify         # Check current database state
+node src/scripts/addTestUsers.js                  # Create 8 test users (4 male, 4 female)
+node src/scripts/addTestUsers.js --list           # List all test users
+node src/scripts/addTestUsers.js --remove         # Remove all test users
+node src/scripts/clearClubs.js                    # Clear all clubs only
 node src/scripts/searchUserClubs.js <email>       # Find user and their clubs
 node src/scripts/deleteUserClub.js <email>        # Delete clubs owned by user
 node src/scripts/removeUserFromClub.js <email>    # Remove user from club memberships
 ```
+
+#### Complete Data Cleanup Script
+The `clearAllData.js` script provides comprehensive database cleanup:
+- **Deletes**: Clubs, Events, Messages, Site Analytics, Coin Transactions, Purchase Requests, Notifications, Push Subscriptions
+- **Preserves**: User accounts (but clears club memberships and coin wallets)
+- **Features**: Parallel deletion, verification, detailed progress reporting
+- **Usage**: Run from `backend/` directory with `node src/scripts/clearAllData.js`
+
+#### Test Users Script
+The `addTestUsers.js` script manages test user accounts:
+- **Creates**: 8 test users (4 male, 4 female) with realistic profiles
+- **Password**: All users have password `password123`
+- **Users**: Alex Johnson, David Smith, Michael Brown, James Wilson (males); Sarah Davis, Emma Miller, Jessica Garcia, Ashley Martinez (females)
+- **Features**: Skill levels 5-8, various play preferences, phone numbers, email verification
+- **Management**: Create, list, or remove test users with command options
+
+## User Login Credentials
+
+### Admin Accounts
+| Name | Email | Password | Role | Notes |
+|------|--------|----------|------|-------|
+| Super Admin | `superadmin@playsquad.com` | `SuperAdmin123!` | Super Admin | Full coin purchase management |
+| Test Admin | `admin@test.com` | `TestAdmin123!` | Admin | Alternative admin account |
+| Test Admin | `testadmin@test.com` | `password123` | Admin | Basic admin account |
+
+### Test Users (Created by addTestUsers.js)
+| Name | Email | Password | Gender | Skill Level | Preferred Format |
+|------|--------|----------|---------|-------------|------------------|
+| Alex Johnson | `alex.johnson@test.com` | `password123` | Male | 7 | Doubles |
+| David Smith | `david.smith@test.com` | `password123` | Male | 6 | Singles |
+| Michael Brown | `michael.brown@test.com` | `password123` | Male | 8 | Any |
+| James Wilson | `james.wilson@test.com` | `password123` | Male | 5 | Mixed |
+| Sarah Davis | `sarah.davis@test.com` | `password123` | Female | 6 | Doubles |
+| Emma Miller | `emma.miller@test.com` | `password123` | Female | 7 | Singles |
+| Jessica Garcia | `jessica.garcia@test.com` | `password123` | Female | 8 | Mixed |
+| Ashley Martinez | `ashley.martinez@test.com` | `password123` | Female | 5 | Any |
+
+### Existing Users
+| Name | Email | Password | Notes |
+|------|--------|----------|-------|
+| Roel Sundiam | `sundiamr@aol.com` | `password123` | Existing user (skill 5) |
+| Helen Sundiam | `sundiamhelen@yahoo.com` | `password123` | Existing user (skill 5) |
+
+**Total Users**: 13 (3 admin accounts + 8 test users + 2 existing users)
+**Admin Dashboard Shows**: 10 users (excludes 3 admin accounts with "admin" in email)
 
 ## Architecture Overview
 

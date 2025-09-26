@@ -124,9 +124,10 @@ import { ModalService } from '../../services/modal.service';
 
             <div class="club-actions">
               <button class="btn-outline" (click)="viewClub(club.id)">View Details</button>
-              <button class="btn-primary" (click)="joinClub(club)" *ngIf="!isMemberOfClub(club)">
+              <button class="btn-primary" (click)="joinClub(club)" *ngIf="!isMemberOfClub(club) && !isClubAdmin(club) && !hasPendingJoinRequest(club)">
                 {{ club.isPrivate ? 'Request to Join' : 'Join Club' }}
               </button>
+              <span class="pending-badge" *ngIf="hasPendingJoinRequest(club)">⏳ Pending Approval</span>
               <span class="member-badge" *ngIf="isMemberOfClub(club)">✓ Member</span>
             </div>
             
@@ -191,8 +192,8 @@ import { ModalService } from '../../services/modal.service';
       </main>
 
       <!-- Create Club Modal -->
-      <div class="modal" *ngIf="showCreateClub" (click)="closeModal($event)">
-        <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal" *ngIf="showCreateClub">
+        <div class="modal-content">
           <div class="modal-header">
             <h2>Create New Club</h2>
             <button class="close-btn" (click)="showCreateClub = false">×</button>
@@ -232,12 +233,6 @@ import { ModalService } from '../../services/modal.service';
               </div>
             </div>
 
-            <div class="form-group">
-              <label>
-                <input type="checkbox" formControlName="isPrivate">
-                Private Club (requires invite code)
-              </label>
-            </div>
 
             <div class="modal-actions">
               <button type="button" class="btn-secondary" (click)="showCreateClub = false">Cancel</button>
@@ -672,6 +667,15 @@ import { ModalService } from '../../services/modal.service';
       gap: 0.25rem;
     }
 
+    .pending-badge {
+      color: #f59e0b;
+      font-weight: 600;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
     /* Pagination */
     .pagination {
       display: flex;
@@ -1036,8 +1040,7 @@ export class ClubsListComponent implements OnInit {
     sport: ['', [Validators.required]],
     description: [''],
     locationName: ['', [Validators.required]],
-    locationAddress: ['', [Validators.required]],
-    isPrivate: [false]
+    locationAddress: ['', [Validators.required]]
   });
 
   constructor(
@@ -1278,8 +1281,7 @@ export class ClubsListComponent implements OnInit {
         location: {
           name: formValue.locationName!,
           address: formValue.locationAddress!
-        },
-        isPrivate: formValue.isPrivate || false
+        }
       };
 
       this.clubService.createClub(clubData).subscribe({
@@ -1334,11 +1336,6 @@ export class ClubsListComponent implements OnInit {
     return errors;
   }
 
-  closeModal(event: Event): void {
-    if (event.target === event.currentTarget) {
-      this.showCreateClub = false;
-    }
-  }
 
   hasPendingRequests(club: Club): boolean {
     return !!(club.joinRequests && club.joinRequests.some(request => request.status === 'pending'));
@@ -1352,6 +1349,14 @@ export class ClubsListComponent implements OnInit {
     return this.getPendingRequests(club).length;
   }
 
+  hasPendingJoinRequest(club: Club): boolean {
+    const currentUser = this.authService.currentUser;
+    if (!currentUser || !club.joinRequests) return false;
+
+    return club.joinRequests.some(request =>
+      request.user.id === currentUser.id && request.status === 'pending'
+    );
+  }
 
   loadAllClubs(event: Event): void {
     event.preventDefault();
