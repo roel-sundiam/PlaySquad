@@ -1,5 +1,6 @@
 const Notification = require('../models/Notification');
 const socketService = require('./socketService');
+const PushNotificationService = require('./pushNotificationService');
 
 class NotificationService {
   
@@ -54,7 +55,16 @@ class NotificationService {
 
       console.log(`Emitted event-published notification to room: ${clubRoomName}`);
       console.log(`Created ${notifications.length} notification records`);
-      
+
+      // Send push notifications (runs in background)
+      PushNotificationService.sendEventPublishedNotifications(event, club, publisher)
+        .then(pushResults => {
+          console.log(`Push notifications sent for event publication: ${pushResults.successful}/${pushResults.total}`);
+        })
+        .catch(error => {
+          console.error('Error sending push notifications for event publication:', error);
+        });
+
       return notifications;
     } catch (error) {
       console.error('Error in notifyEventPublished:', error);
@@ -128,7 +138,16 @@ class NotificationService {
 
       console.log(`Emitted ${notificationType} notification to room: ${clubRoomName}`);
       console.log(`Created ${notifications.length} notification records`);
-      
+
+      // Send push notifications (runs in background)
+      PushNotificationService.sendEventStatusChangeNotifications(event, club, changer, oldStatus, newStatus)
+        .then(pushResults => {
+          console.log(`Push notifications sent for event status change: ${pushResults.successful}/${pushResults.total}`);
+        })
+        .catch(error => {
+          console.error('Error sending push notifications for event status change:', error);
+        });
+
       return notifications;
     } catch (error) {
       console.error('Error in notifyEventStatusChange:', error);

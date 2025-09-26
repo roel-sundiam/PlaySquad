@@ -4,6 +4,7 @@ const Club = require('../models/Club');
 const User = require('../models/User');
 const { protect, clubMember, clubOrganizer } = require('../middleware/auth');
 const { requireCoins, requireClubCoinAccess, spendCoins, COIN_COSTS } = require('../middleware/coinAuth');
+const PushNotificationService = require('../services/pushNotificationService');
 
 const router = express.Router();
 
@@ -734,6 +735,15 @@ router.put('/:id/requests/:requestId', protect, [
           approvedBy: req.user.id
         }
       );
+
+      // Send push notification to the approved user (runs in background)
+      PushNotificationService.sendJoinRequestApprovedNotification(club, approvedUser, req.user)
+        .then(pushResults => {
+          console.log(`Push notification sent for join request approval: ${pushResults.successful}/${pushResults.total}`);
+        })
+        .catch(error => {
+          console.error('Error sending push notification for join request approval:', error);
+        });
 
       res.status(200).json({
         success: true,

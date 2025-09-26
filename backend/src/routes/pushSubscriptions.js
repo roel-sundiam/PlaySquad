@@ -1,0 +1,382 @@
+const express = require('express');
+const { body, validationResult } = require('express-validator');
+const auth = require('../middleware/auth');
+const PushSubscription = require('../models/PushSubscription');
+const webpush = require('web-push');
+
+const router = express.Router();
+
+// Configure web-push with VAPID keys
+webpush.setVapidDetails(
+  process.env.VAPID_SUBJECT,
+  process.env.VAPID_PUBLIC_KEY,
+  process.env.VAPID_PRIVATE_KEY
+);
+
+// Get VAPID public key for frontend
+router.get('/vapid-public-key', (req, res) => {
+  try {
+    res.json({
+      success: true,
+      data: {
+        publicKey: process.env.VAPID_PUBLIC_KEY
+      }
+    });
+  } catch (error) {
+    console.error('Error getting VAPID public key:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get VAPID public key'
+    });
+  }
+});
+
+// Subscribe to push notifications
+router.post('/subscribe',
+  auth,
+  [
+    body('endpoint').isURL().withMessage('Valid endpoint URL is required'),
+    body('keys.p256dh').notEmpty().withMessage('p256dh key is required'),
+    body('keys.auth').notEmpty().withMessage('auth key is required'),
+    body('deviceInfo.userAgent').optional().isString(),
+    body('preferences').optional().isObject()
+  ],
+  async (req, res) => {
+    try {
+      // Validate request
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Validation failed',
+          errors: errors.array()
+        });
+      }
+
+      const { endpoint, keys, deviceInfo, preferences } = req.body;
+      const userId = req.user.id;
+
+      // Check if subscription already exists for this endpoint
+      const existingSubscription = await PushSubscription.findOne({ endpoint });
+
+      if (existingSubscription) {
+        // Update existing subscription if it belongs to the same user
+        if (existingSubscription.user.toString() === userId) {
+          existingSubscription.keys = keys;
+          existingSubscription.deviceInfo = deviceInfo || existingSubscription.deviceInfo;
+          existingSubscription.preferences = { ...existingSubscription.preferences, ...preferences };
+          existingSubscription.isActive = true;
+          existingSubscription.lastUsed = new Date();
+
+          const updatedSubscription = await existingSubscription.save();
+
+          return res.json({
+            success: true,
+            message: 'Push subscription updated successfully',
+            data: {
+              subscriptionId: updatedSubscription._id
+            }
+          });
+        } else {
+          return res.status(409).json({
+            success: false,
+            message: 'Subscription endpoint already exists for another user'
+          });
+        }
+      }
+
+      // Create new subscription
+      const newSubscription = new PushSubscription({
+        user: userId,
+        endpoint,
+        keys,
+        deviceInfo: deviceInfo || {},
+        preferences: preferences || {}
+      });
+
+      const savedSubscription = await newSubscription.save();
+
+      // Test the subscription by sending a welcome notification
+      try {
+        await webpush.sendNotification(savedSubscription.webPushSubscription, JSON.stringify({
+          title: 'Welcome to PlaySquad!',
+          message: 'You\'ll now receive notifications about club events and activities.',
+          type: 'system',
+          tag: 'welcome-notification',
+          requireInteraction: false
+        }));
+      } catch (pushError) {
+        console.warn('Failed to send welcome push notification:', pushError.message);
+        // Don't fail the subscription creation if welcome notification fails
+      }
+
+      res.status(201).json({
+        success: true,
+        message: 'Push subscription created successfully',
+        data: {
+          subscriptionId: savedSubscription._id
+        }
+      });
+
+    } catch (error) {
+      console.error('Error creating push subscription:', error);
+
+      if (error.name === 'DuplicateSubscriptionError') {
+        return res.status(409).json({
+          success: false,
+          message: 'Push subscription already exists'
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        message: 'Failed to create push subscription'
+      });
+    }
+  }
+);
+
+// Update subscription preferences
+router.put('/preferences',
+  auth,
+  [
+    body('subscriptionId').isMongoId().withMessage('Valid subscription ID is required'),
+    body('preferences').isObject().withMessage('Preferences object is required'),
+    body('preferences.eventNotifications').optional().isBoolean(),
+    body('preferences.clubNotifications').optional().isBoolean(),
+    body('preferences.systemNotifications').optional().isBoolean()
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Validation failed',
+          errors: errors.array()
+        });
+      }
+
+      const { subscriptionId, preferences } = req.body;
+      const userId = req.user.id;
+
+      const subscription = await PushSubscription.findOne({
+        _id: subscriptionId,
+        user: userId,
+        isActive: true
+      });
+
+      if (!subscription) {
+        return res.status(404).json({
+          success: false,
+          message: 'Push subscription not found'
+        });
+      }
+
+      subscription.preferences = { ...subscription.preferences, ...preferences };
+      await subscription.save();
+
+      res.json({
+        success: true,
+        message: 'Subscription preferences updated successfully',
+        data: {
+          preferences: subscription.preferences
+        }
+      });
+
+    } catch (error) {
+      console.error('Error updating subscription preferences:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update subscription preferences'
+      });
+    }
+  }
+);
+
+// Get user's active subscriptions
+router.get('/my-subscriptions', auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const subscriptions = await PushSubscription.findActiveForUser(userId)
+      .select('-keys') // Don't return sensitive keys
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      data: {
+        subscriptions,
+        count: subscriptions.length
+      }
+    });
+
+  } catch (error) {
+    console.error('Error getting user subscriptions:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get subscriptions'
+    });
+  }
+});
+
+// Unsubscribe from push notifications
+router.delete('/unsubscribe',
+  auth,
+  [
+    body('endpoint').isURL().withMessage('Valid endpoint URL is required')
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Validation failed',
+          errors: errors.array()
+        });
+      }
+
+      const { endpoint } = req.body;
+      const userId = req.user.id;
+
+      const subscription = await PushSubscription.findOne({
+        endpoint,
+        user: userId
+      });
+
+      if (!subscription) {
+        return res.status(404).json({
+          success: false,
+          message: 'Push subscription not found'
+        });
+      }
+
+      await subscription.deactivate();
+
+      res.json({
+        success: true,
+        message: 'Successfully unsubscribed from push notifications'
+      });
+
+    } catch (error) {
+      console.error('Error unsubscribing from push notifications:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to unsubscribe from push notifications'
+      });
+    }
+  }
+);
+
+// Test push notification (development only)
+router.post('/test',
+  auth,
+  [
+    body('subscriptionId').isMongoId().withMessage('Valid subscription ID is required'),
+    body('title').optional().isString().isLength({ max: 100 }),
+    body('message').optional().isString().isLength({ max: 300 })
+  ],
+  async (req, res) => {
+    try {
+      // Only allow in development
+      if (process.env.NODE_ENV === 'production') {
+        return res.status(403).json({
+          success: false,
+          message: 'Test notifications not allowed in production'
+        });
+      }
+
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Validation failed',
+          errors: errors.array()
+        });
+      }
+
+      const { subscriptionId, title, message } = req.body;
+      const userId = req.user.id;
+
+      const subscription = await PushSubscription.findOne({
+        _id: subscriptionId,
+        user: userId,
+        isActive: true
+      });
+
+      if (!subscription) {
+        return res.status(404).json({
+          success: false,
+          message: 'Push subscription not found'
+        });
+      }
+
+      const payload = {
+        title: title || 'Test Notification',
+        message: message || 'This is a test push notification from PlaySquad!',
+        type: 'system',
+        tag: 'test-notification',
+        requireInteraction: false
+      };
+
+      await webpush.sendNotification(
+        subscription.webPushSubscription,
+        JSON.stringify(payload)
+      );
+
+      await subscription.updateLastUsed();
+
+      res.json({
+        success: true,
+        message: 'Test notification sent successfully'
+      });
+
+    } catch (error) {
+      console.error('Error sending test push notification:', error);
+
+      if (error.statusCode === 410) {
+        // Subscription has expired
+        await PushSubscription.findByIdAndUpdate(req.body.subscriptionId, { isActive: false });
+        return res.status(410).json({
+          success: false,
+          message: 'Push subscription has expired and has been deactivated'
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        message: 'Failed to send test notification'
+      });
+    }
+  }
+);
+
+// Get subscription statistics (admin only - optional)
+router.get('/stats', auth, async (req, res) => {
+  try {
+    // Simple role check - you might want to implement proper admin middleware
+    if (req.user.email !== 'admin@test.com' && req.user.email !== 'superadmin@playsquad.com') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Admin privileges required.'
+      });
+    }
+
+    const stats = await PushSubscription.getStats();
+
+    res.json({
+      success: true,
+      data: stats
+    });
+
+  } catch (error) {
+    console.error('Error getting subscription stats:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get subscription statistics'
+    });
+  }
+});
+
+module.exports = router;

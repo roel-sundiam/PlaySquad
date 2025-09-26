@@ -214,3 +214,8 @@ Run the script to create admin accounts:
 ```bash
 node src/scripts/createSuperAdmin.js
 ```
+
+## Git Operations
+
+### "Go Git" Trigger Phrase
+- **Trigger phrase**: When you say **"go git"**, I will automatically handle all git operations (add, commit, push)
