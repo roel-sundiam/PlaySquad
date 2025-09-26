@@ -829,13 +829,13 @@ export class ClubCoinWalletComponent implements OnInit {
         console.error('Failed to load coin packages:', error);
         console.error('Error details:', error.error);
         
-        // Fallback packages if API fails (PHP prices)
+        // Fallback packages if API fails (PHP prices) - 1 peso = 1 coin + volume discounts
         this.coinPackages = [
-          { id: 'starter', name: 'Starter', coins: 50, bonusCoins: 0, totalCoins: 50, price: 249 },
-          { id: 'basic', name: 'Basic', coins: 100, bonusCoins: 10, totalCoins: 110, price: 499 },
-          { id: 'popular', name: 'Popular', coins: 250, bonusCoins: 50, totalCoins: 300, price: 999 },
-          { id: 'premium', name: 'Premium', coins: 500, bonusCoins: 100, totalCoins: 600, price: 1999 },
-          { id: 'enterprise', name: 'Enterprise', coins: 1000, bonusCoins: 200, totalCoins: 1200, price: 3499 }
+          { id: 'starter', name: 'Starter', coins: 249, bonusCoins: 0, totalCoins: 249, price: 249 },
+          { id: 'basic', name: 'Basic', coins: 499, bonusCoins: 25, totalCoins: 524, price: 499 },
+          { id: 'popular', name: 'Popular', coins: 999, bonusCoins: 100, totalCoins: 1099, price: 999 },
+          { id: 'premium', name: 'Premium', coins: 1999, bonusCoins: 300, totalCoins: 2299, price: 1999 },
+          { id: 'enterprise', name: 'Enterprise', coins: 3499, bonusCoins: 700, totalCoins: 4199, price: 3499 }
         ];
         console.log('Using fallback coin packages:', this.coinPackages);
       }

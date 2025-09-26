@@ -32,16 +32,14 @@ router.get('/vapid-public-key', (req, res) => {
 });
 
 // Subscribe to push notifications
-router.post('/subscribe',
+router.post('/subscribe', [
   auth,
-  [
-    body('endpoint').isURL().withMessage('Valid endpoint URL is required'),
-    body('keys.p256dh').notEmpty().withMessage('p256dh key is required'),
-    body('keys.auth').notEmpty().withMessage('auth key is required'),
-    body('deviceInfo.userAgent').optional().isString(),
-    body('preferences').optional().isObject()
-  ],
-  async (req, res) => {
+  body('endpoint').isURL().withMessage('Valid endpoint URL is required'),
+  body('keys.p256dh').notEmpty().withMessage('p256dh key is required'),
+  body('keys.auth').notEmpty().withMessage('auth key is required'),
+  body('deviceInfo.userAgent').optional().isString(),
+  body('preferences').optional().isObject()
+], async (req, res) => {
     try {
       // Validate request
       const errors = validationResult(req);
@@ -137,16 +135,14 @@ router.post('/subscribe',
 );
 
 // Update subscription preferences
-router.put('/preferences',
+router.put('/preferences', [
   auth,
-  [
-    body('subscriptionId').isMongoId().withMessage('Valid subscription ID is required'),
-    body('preferences').isObject().withMessage('Preferences object is required'),
-    body('preferences.eventNotifications').optional().isBoolean(),
-    body('preferences.clubNotifications').optional().isBoolean(),
-    body('preferences.systemNotifications').optional().isBoolean()
-  ],
-  async (req, res) => {
+  body('subscriptionId').isMongoId().withMessage('Valid subscription ID is required'),
+  body('preferences').isObject().withMessage('Preferences object is required'),
+  body('preferences.eventNotifications').optional().isBoolean(),
+  body('preferences.clubNotifications').optional().isBoolean(),
+  body('preferences.systemNotifications').optional().isBoolean()
+], async (req, res) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -221,12 +217,10 @@ router.get('/my-subscriptions', auth, async (req, res) => {
 });
 
 // Unsubscribe from push notifications
-router.delete('/unsubscribe',
+router.delete('/unsubscribe', [
   auth,
-  [
-    body('endpoint').isURL().withMessage('Valid endpoint URL is required')
-  ],
-  async (req, res) => {
+  body('endpoint').isURL().withMessage('Valid endpoint URL is required')
+], async (req, res) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -270,14 +264,12 @@ router.delete('/unsubscribe',
 );
 
 // Test push notification (development only)
-router.post('/test',
+router.post('/test', [
   auth,
-  [
-    body('subscriptionId').isMongoId().withMessage('Valid subscription ID is required'),
-    body('title').optional().isString().isLength({ max: 100 }),
-    body('message').optional().isString().isLength({ max: 300 })
-  ],
-  async (req, res) => {
+  body('subscriptionId').isMongoId().withMessage('Valid subscription ID is required'),
+  body('title').optional().isString().isLength({ max: 100 }),
+  body('message').optional().isString().isLength({ max: 300 })
+], async (req, res) => {
     try {
       // Only allow in development
       if (process.env.NODE_ENV === 'production') {

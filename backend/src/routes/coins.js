@@ -6,13 +6,13 @@ const { protect } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Coin packages configuration (PHP prices)
+// Coin packages configuration (PHP prices) - 1 peso = 1 coin + volume discounts
 const COIN_PACKAGES = {
-  starter: { coins: 50, price: 249, bonus: 0 },
-  basic: { coins: 100, price: 499, bonus: 10 },
-  popular: { coins: 250, price: 999, bonus: 50 },
-  premium: { coins: 500, price: 1999, bonus: 100 },
-  enterprise: { coins: 1000, price: 3499, bonus: 200 }
+  starter: { coins: 249, price: 249, bonus: 0 },
+  basic: { coins: 499, price: 499, bonus: 25 },
+  popular: { coins: 999, price: 999, bonus: 100 },
+  premium: { coins: 1999, price: 1999, bonus: 300 },
+  enterprise: { coins: 3499, price: 3499, bonus: 700 }
 };
 
 // Get available coin packages

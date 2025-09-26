@@ -22,7 +22,7 @@ app.get('/api/coins/packages', (req, res) => {
   res.json({
     success: true,
     data: [
-      { id: 'starter', name: 'Starter', coins: 50, bonusCoins: 0, totalCoins: 50, price: 249, pricePerCoin: '4.980' }
+      { id: 'starter', name: 'Starter', coins: 249, bonusCoins: 0, totalCoins: 249, price: 249, pricePerCoin: '1.000' }
     ]
   });
 });

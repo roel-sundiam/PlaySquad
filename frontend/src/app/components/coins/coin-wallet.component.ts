@@ -162,7 +162,10 @@ import { ModalService } from '../../services/modal.service';
               </div>
               
               <div class="package-value">
-                \${{ pkg.pricePerCoin }} per coin
+                ₱{{ pkg.pricePerCoin }} per coin
+                <span *ngIf="pkg.bonusCoins > 0" class="bonus-text">
+                  ({{ ((pkg.bonusCoins / pkg.coins) * 100).toFixed(0) }}% bonus!)
+                </span>
               </div>
               
               <button 

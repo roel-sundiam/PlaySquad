@@ -178,13 +178,13 @@ PlaySquad includes a comprehensive coin-based monetization system with approval-
 - **Multiple payment methods**: GCash, Bank Transfer, Cash payments
 - **Complete audit trail**: All transactions tracked with admin notes
 
-### Coin Packages
+### Coin Packages (1 peso = 1 coin + volume discounts)
 ```
-Starter: ₱249 - 50 coins (no bonus)
-Basic: ₱499 - 100 coins + 10 bonus = 110 total
-Popular: ₱999 - 250 coins + 50 bonus = 300 total  
-Premium: ₱1,999 - 500 coins + 100 bonus = 600 total
-Enterprise: ₱3,499 - 1,000 coins + 200 bonus = 1,200 total
+Starter: ₱249 - 249 coins (0% bonus)
+Basic: ₱499 - 499 coins + 5% bonus (25 coins) = 524 total
+Popular: ₱999 - 999 coins + 10% bonus (100 coins) = 1,099 total
+Premium: ₱1,999 - 1,999 coins + 15% bonus (300 coins) = 2,299 total
+Enterprise: ₱3,499 - 3,499 coins + 20% bonus (700 coins) = 4,199 total
 ```
 
 ### Admin Accounts

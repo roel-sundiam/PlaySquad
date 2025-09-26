@@ -17,7 +17,7 @@ const coinRoutes = require('./routes/coins');
 const adminRoutes = require('./routes/admin');
 const analyticsRoutes = require('./routes/analytics');
 const notificationRoutes = require('./routes/notifications');
-const pushSubscriptionRoutes = require('./routes/pushSubscriptions');
+// const pushSubscriptionRoutes = require('./routes/pushSubscriptions');
 const { updateLastActive } = require('./middleware/analytics');
 const socketService = require('./services/socketService');
 
@@ -131,7 +131,7 @@ app.use('/api/coins', updateLastActive, coinRoutes);
 app.use('/api/admin', updateLastActive, adminRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/notifications', updateLastActive, notificationRoutes);
-app.use('/api/push-subscriptions', updateLastActive, pushSubscriptionRoutes);
+// app.use('/api/push-subscriptions', updateLastActive, pushSubscriptionRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

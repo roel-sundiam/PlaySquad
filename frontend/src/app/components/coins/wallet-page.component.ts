@@ -6,97 +6,119 @@ import { AuthService } from '../../services/auth.service';
   selector: 'app-wallet-page',
   template: `
     <div class="wallet-page">
+      <!-- Navigation Header (MANDATORY) -->
       <app-header></app-header>
-      
-      <!-- Page Navigation -->
-      <div class="page-nav">
-        <div class="nav-container">
-          <button class="btn-ghost" (click)="goBack()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+      <!-- Main Container -->
+      <div class="main-content">
+        <!-- Page Header -->
+        <div class="page-header">
+          <button class="back-btn" (click)="goBack()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="15,18 9,12 15,6"></polyline>
             </svg>
             Back to Dashboard
           </button>
           <h1 class="page-title">My Coin Wallet</h1>
         </div>
-      </div>
 
-      <!-- Wallet Component -->
-      <div class="wallet-content">
+        <!-- Wallet Component -->
         <app-coin-wallet></app-coin-wallet>
       </div>
     </div>
   `,
   styles: [`
+    // Global Background (per design guide)
     .wallet-page {
       min-height: 100vh;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      background-attachment: fixed;
+      background: linear-gradient(135deg, #64748b 0%, #94a3b8 50%, #cbd5e1 100%);
+      padding: 2rem 1rem;
     }
 
-    .page-nav {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-      padding: 12px 0;
+    // Main Container (per design guide)
+    .main-content {
+      max-width: 1200px;
+      margin: auto;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
     }
 
-    .nav-container {
-      max-width: 1536px;
-      margin: 0 auto;
-      padding: 0 24px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
+    // Page Header
+    .page-header {
+      padding: 2rem 2rem 1rem 2rem;
+      border-bottom: 1px solid rgba(251, 146, 60, 0.2);
+      background: linear-gradient(135deg, rgba(251, 146, 60, 0.05) 0%, rgba(255, 255, 255, 0.8) 100%);
     }
 
-    .btn-ghost {
-      display: flex;
+    .back-btn {
+      display: inline-flex;
       align-items: center;
       gap: 8px;
       padding: 8px 16px;
-      background: transparent;
-      border: none;
+      background: rgba(251, 146, 60, 0.1);
+      border: 1px solid rgba(251, 146, 60, 0.3);
       border-radius: 8px;
-      color: #64748b;
+      color: #fb923c;
       font-weight: 500;
       cursor: pointer;
       transition: all 200ms ease;
+      text-decoration: none;
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
     }
 
-    .btn-ghost:hover {
-      background: rgba(100, 116, 139, 0.1);
-      color: #334155;
+    .back-btn:hover {
+      background: rgba(251, 146, 60, 0.15);
+      border-color: rgba(251, 146, 60, 0.8);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(251, 146, 60, 0.2);
     }
 
     .page-title {
       margin: 0;
-      color: #1a202c;
-      font-size: 1.5rem;
+      color: #000000;
+      font-family: 'Poppins', sans-serif;
+      font-size: 2rem;
       font-weight: 700;
+      background: linear-gradient(135deg, #fb923c, #f59e0b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
-    .spacer {
-      flex: 1;
-    }
-
-    .wallet-content {
-      padding: 0;
-    }
-
+    // Mobile Responsive
     @media (max-width: 768px) {
-      .nav-container {
-        padding: 0 16px;
-        height: 60px;
+      .wallet-page {
+        padding: 1rem 0.5rem;
+      }
+
+      .page-header {
+        padding: 1.5rem 1rem 1rem 1rem;
+      }
+
+      .page-title {
+        font-size: 1.5rem;
+      }
+
+      .back-btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .wallet-page {
+        padding: 0.5rem 0.25rem;
+      }
+
+      .page-header {
+        padding: 1rem 0.75rem;
       }
 
       .page-title {
         font-size: 1.25rem;
-      }
-
-      .back-btn {
-        padding: 8px 12px;
-        font-size: 0.9rem;
       }
     }
   `]
