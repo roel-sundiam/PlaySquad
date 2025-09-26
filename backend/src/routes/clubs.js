@@ -720,14 +720,12 @@ router.put('/:id/requests/:requestId', protect, [
       request.status = 'approved';
       request.respondedAt = new Date();
       request.respondedBy = req.user.id;
-      
-      await club.save();
 
-      // Spend club coins after successful member approval
+      // Spend club coins BEFORE saving and responding
       const approvedUser = await User.findById(request.user);
       await club.spendCoins(
         COIN_COSTS.MEMBER_APPROVAL,
-        'member_approval',
+        'club_feature',
         `Member approval: ${approvedUser.firstName} ${approvedUser.lastName} joined ${club.name}`,
         {
           newMemberId: request.user,
@@ -736,18 +734,23 @@ router.put('/:id/requests/:requestId', protect, [
         }
       );
 
-      // Send push notification to the approved user (runs in background)
-      PushNotificationService.sendJoinRequestApprovedNotification(club, approvedUser, req.user)
-        .then(pushResults => {
-          console.log(`Push notification sent for join request approval: ${pushResults.successful}/${pushResults.total}`);
-        })
-        .catch(error => {
-          console.error('Error sending push notification for join request approval:', error);
-        });
+      await club.save();
 
       res.status(200).json({
         success: true,
         message: 'Join request approved successfully'
+      });
+
+      // Send push notification to the approved user (runs in background after response)
+      // Use setImmediate to ensure this runs after the response is sent
+      setImmediate(async () => {
+        try {
+          const pushResults = await PushNotificationService.sendJoinRequestApprovedNotification(club, approvedUser, req.user);
+          console.log(`Push notification sent for join request approval: ${pushResults.successful}/${pushResults.total}`);
+        } catch (error) {
+          console.error('Error sending push notification for join request approval:', error);
+          // Don't let push notification errors affect the API response
+        }
       });
     } else {
       // Reject request
