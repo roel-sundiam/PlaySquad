@@ -2,12 +2,19 @@ const webpush = require('web-push');
 const PushSubscription = require('../models/PushSubscription');
 const Notification = require('../models/Notification');
 
-// Configure web-push with VAPID keys
-webpush.setVapidDetails(
-  process.env.VAPID_SUBJECT,
-  process.env.VAPID_PUBLIC_KEY,
-  process.env.VAPID_PRIVATE_KEY
-);
+// Configure web-push with VAPID keys only if they exist
+const vapidConfigured = process.env.VAPID_SUBJECT && process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY;
+
+if (vapidConfigured) {
+  webpush.setVapidDetails(
+    process.env.VAPID_SUBJECT,
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+  console.log('Push notifications enabled with VAPID configuration');
+} else {
+  console.log('Push notifications disabled - VAPID keys not configured');
+}
 
 class PushNotificationService {
 
@@ -16,6 +23,10 @@ class PushNotificationService {
    */
   static async sendEventPublishedNotifications(event, club, publisher) {
     try {
+      if (!vapidConfigured) {
+        console.log('Push notifications disabled - skipping event published notifications');
+        return [];
+      }
       console.log(`Sending push notifications for event: ${event.title}`);
 
       // Get all active club members except the publisher
@@ -89,6 +100,10 @@ class PushNotificationService {
    */
   static async sendEventStatusChangeNotifications(event, club, changer, oldStatus, newStatus) {
     try {
+      if (!vapidConfigured) {
+        console.log('Push notifications disabled - skipping event status change notifications');
+        return [];
+      }
       if (newStatus !== 'cancelled') {
         // For now, only handle cancelled events
         return [];
@@ -157,6 +172,10 @@ class PushNotificationService {
    */
   static async sendJoinRequestApprovedNotification(club, newMember, approver) {
     try {
+      if (!vapidConfigured) {
+        console.log('Push notifications disabled - skipping join request approved notifications');
+        return [];
+      }
       console.log(`Sending join request approved notification to: ${newMember.email}`);
 
       // Get active push subscriptions for the new member
@@ -209,6 +228,10 @@ class PushNotificationService {
    * Send push notifications to multiple subscriptions
    */
   static async sendToMultipleSubscriptions(subscriptions, payload) {
+    if (!vapidConfigured) {
+      console.log('Push notifications disabled - cannot send to subscriptions');
+      return { total: 0, successful: 0, failed: 0, errors: [] };
+    }
     const results = {
       total: subscriptions.length,
       successful: 0,
@@ -254,6 +277,10 @@ class PushNotificationService {
    */
   static async sendCustomNotificationToUsers(userIds, payload) {
     try {
+      if (!vapidConfigured) {
+        console.log('Push notifications disabled - skipping custom notifications');
+        return [];
+      }
       console.log(`Sending custom push notification to ${userIds.length} users`);
 
       const subscriptions = await PushSubscription.findActiveForUsers(userIds);
@@ -278,6 +305,10 @@ class PushNotificationService {
    */
   static async sendSystemAnnouncement(payload) {
     try {
+      if (!vapidConfigured) {
+        console.log('Push notifications disabled - skipping system announcement');
+        return [];
+      }
       console.log('Sending system-wide push notification');
 
       // Get all active subscriptions that accept system notifications
@@ -310,6 +341,9 @@ class PushNotificationService {
    */
   static async sendTestNotification(userId, customPayload = null) {
     try {
+      if (!vapidConfigured) {
+        throw new Error('Push notifications disabled - VAPID keys not configured');
+      }
       console.log(`Sending test push notification to user: ${userId}`);
 
       const subscriptions = await PushSubscription.findActiveForUser(userId);
@@ -358,7 +392,7 @@ class PushNotificationService {
       const stats = await PushSubscription.getStats();
       return {
         ...stats,
-        vapidConfigured: !!(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY)
+        vapidConfigured
       };
     } catch (error) {
       console.error('Error getting push notification statistics:', error);
