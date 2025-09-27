@@ -8,7 +8,7 @@ import { environment } from '../../environments/environment';
 })
 export class SocketService {
   private socket: Socket | null = null;
-  private readonly url = environment.production ? '' : 'http://localhost:3000';
+  private readonly url = environment.socketUrl;
 
   constructor() {
     this.initializeSocket();
