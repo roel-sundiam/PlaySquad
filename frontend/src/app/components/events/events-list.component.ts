@@ -497,12 +497,6 @@ import { ModalService } from '../../services/modal.service';
 
             <div class="modal-actions">
               <button type="button" class="btn-secondary" (click)="closeCreateEventModal()">Cancel</button>
-              <button type="button" class="btn-info" (click)="testHealth()" [disabled]="creating">
-                Test Health
-              </button>
-              <button type="button" class="btn-warning" (click)="testBackendBody()" [disabled]="creating">
-                Test Backend Body
-              </button>
               <button type="submit" class="btn-primary" [disabled]="createEventForm.invalid || creating || getSelectedClubCoinBalance() < 10">
                 {{ creating ? 'Creating...' : 'Create Event (10 coins)' }}
               </button>
@@ -2894,70 +2888,5 @@ export class EventsListComponent implements OnInit {
     return headerObj;
   }
 
-  testHealth(): void {
-    this.showDebugPanel = true;
-    this.debugInfo = {
-      step: 'Testing Backend Health',
-      timestamp: new Date().toISOString()
-    };
 
-    // Test health endpoint directly
-    fetch('http://localhost:3000/api/health')
-      .then(response => {
-        this.debugInfo.step = 'Backend Health Response';
-        this.debugInfo.healthStatus = {
-          status: response.status,
-          statusText: response.statusText,
-          ok: response.ok
-        };
-        return response.json();
-      })
-      .then(data => {
-        this.debugInfo.healthResponse = data;
-      })
-      .catch(error => {
-        this.debugInfo.step = 'Backend Health Error';
-        this.debugInfo.healthError = {
-          message: error.message,
-          name: error.name
-        };
-      });
-  }
-
-  testBackendBody(): void {
-    this.showDebugPanel = true;
-    this.debugInfo = {
-      step: 'Testing Backend Body Parsing',
-      timestamp: new Date().toISOString()
-    };
-
-    const formValue = this.createEventForm.value;
-    const testData = {
-      title: formValue.title!,
-      club: formValue.club!,
-      eventType: formValue.eventType!,
-      test: true
-    };
-
-    this.debugInfo.testRequest = {
-      endpoint: '/api/test-direct',
-      method: 'POST',
-      data: testData
-    };
-
-    // Test direct server route using ApiService
-    this.eventService.testDirect(testData).subscribe({
-      next: (response) => {
-        this.debugInfo.step = 'Backend Test Response';
-        this.debugInfo.testResponse = response;
-      },
-      error: (error) => {
-        this.debugInfo.step = 'Backend Test Error';
-        this.debugInfo.testError = {
-          status: error.status,
-          error: error.error
-        };
-      }
-    });
-  }
 }
