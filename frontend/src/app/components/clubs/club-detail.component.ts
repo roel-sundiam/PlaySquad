@@ -455,8 +455,8 @@ import { SocketService } from '../../services/socket.service';
     /* Statistics Grid - Design Guide Standard */
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 0.75rem;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
       margin-bottom: 32px;
     }
 
@@ -1108,25 +1108,29 @@ import { SocketService } from '../../services/socket.service';
       }
 
       .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
       }
 
       .stat-card {
-        min-height: 100px;
-        padding: 1rem;
+        min-height: 90px;
+        padding: 0.75rem;
         flex-direction: column;
         text-align: center;
-        gap: 12px;
+        gap: 8px;
       }
 
       .stat-icon {
-        width: 40px;
-        height: 40px;
+        width: 32px;
+        height: 32px;
       }
 
       .stat-number {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
+      }
+
+      .stat-label {
+        font-size: 0.75rem;
       }
 
       .info-grid {
@@ -1167,8 +1171,27 @@ import { SocketService } from '../../services/socket.service';
       }
 
       .stats-grid {
-        grid-template-columns: 1fr;
-        gap: 8px;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+      }
+
+      .stat-card {
+        min-height: 80px;
+        padding: 0.5rem;
+        gap: 6px;
+      }
+
+      .stat-icon {
+        width: 28px;
+        height: 28px;
+      }
+
+      .stat-number {
+        font-size: 1.125rem;
+      }
+
+      .stat-label {
+        font-size: 0.7rem;
       }
 
       .hero-actions .btn-primary {
