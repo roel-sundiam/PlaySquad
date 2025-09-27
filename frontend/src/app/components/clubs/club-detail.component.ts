@@ -38,7 +38,12 @@ import { SocketService } from '../../services/socket.service';
         <!-- Hero Section -->
         <div class="hero-section">
           <div class="hero-content">
-            <div class="club-avatar" [style.background-image]="club.avatar ? 'url(' + club.avatar + ')' : 'none'">
+            <!-- App Logo for Mobile -->
+            <div class="app-logo mobile-only">
+              <img src="assets/playsquad-logo.png" alt="PlaySquad" />
+            </div>
+            <!-- Club Avatar for Desktop -->
+            <div class="club-avatar desktop-only" [style.background-image]="club.avatar ? 'url(' + club.avatar + ')' : 'none'">
               <span *ngIf="!club.avatar" class="avatar-placeholder">{{ (club.name || 'C').charAt(0).toUpperCase() }}</span>
             </div>
             <div class="club-info">
@@ -400,6 +405,34 @@ import { SocketService } from '../../services/socket.service';
       font-size: 2.5rem;
       flex-shrink: 0;
       box-shadow: 0 8px 25px rgba(251, 146, 60, 0.3);
+    }
+
+    .app-logo {
+      width: 96px;
+      height: 96px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      background: linear-gradient(135deg, #00C853, #4CAF50);
+      box-shadow: 0 8px 25px rgba(0, 200, 83, 0.3);
+      padding: 8px;
+    }
+
+    .app-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 12px;
+    }
+
+    .mobile-only {
+      display: none;
+    }
+
+    .desktop-only {
+      display: flex;
     }
 
     .club-info h1 {
@@ -1156,6 +1189,14 @@ import { SocketService } from '../../services/socket.service';
         font-weight: 600;
       }
 
+      .mobile-only {
+        display: flex;
+      }
+
+      .desktop-only {
+        display: none;
+      }
+
       .chat-container {
         height: 400px;
       }
@@ -1217,12 +1258,20 @@ import { SocketService } from '../../services/socket.service';
       }
 
       .tab-navigation {
-        flex-direction: column;
-        gap: 8px;
+        flex-direction: row;
+        gap: 4px;
+        padding: 6px;
       }
 
       .tab-btn {
-        width: 100%;
+        flex: 1;
+        font-size: 0.75rem;
+        padding: 8px 6px;
+        gap: 4px;
+      }
+
+      .tab-btn .material-icons {
+        font-size: 16px;
       }
     }
   `]
