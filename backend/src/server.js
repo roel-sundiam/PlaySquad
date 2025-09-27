@@ -25,7 +25,9 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:4200", "http://localhost:4203"],
+    origin: process.env.NODE_ENV === 'production'
+      ? [process.env.FRONTEND_URL || "https://playsquad-frontend.onrender.com"]
+      : ["http://localhost:4200", "http://localhost:4203"],
     methods: ["GET", "POST"]
   }
 });
@@ -45,7 +47,9 @@ const limiter = rateLimit({
 
 app.use(helmet());
 app.use(cors({
-  origin: ["http://localhost:4200", "http://localhost:4203"],
+  origin: process.env.NODE_ENV === 'production'
+    ? [process.env.FRONTEND_URL || "https://playsquad-frontend.onrender.com"]
+    : ["http://localhost:4200", "http://localhost:4203"],
   credentials: true
 }));
 app.use(morgan('combined'));
