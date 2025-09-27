@@ -415,8 +415,6 @@ import { SocketService } from '../../services/socket.service';
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      background: linear-gradient(135deg, #00C853, #4CAF50);
-      box-shadow: 0 8px 25px rgba(0, 200, 83, 0.3);
       padding: 8px;
     }
 
