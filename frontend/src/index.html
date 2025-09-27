@@ -17,13 +17,41 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#00C853">
   <meta name="application-name" content="PlaySquad">
+
+  <!-- iOS PWA Support -->
   <meta name="apple-mobile-web-app-title" content="PlaySquad">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="assets/icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="assets/icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/icon-192x192.png">
+
+  <!-- iOS Splash Screens -->
+  <link rel="apple-touch-startup-image" href="assets/icon-512x512.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)">
+  <link rel="apple-touch-startup-image" href="assets/icon-512x512.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)">
+
+  <!-- Microsoft Tiles -->
+  <meta name="msapplication-TileColor" content="#00C853">
+  <meta name="msapplication-TileImage" content="assets/icon-144x144.png">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
   <app-root></app-root>
+
+  <!-- iOS PWA Detection Script -->
+  <script>
+    // Detect iOS PWA
+    if (navigator.standalone || window.matchMedia('(display-mode: standalone)').matches) {
+      document.body.classList.add('pwa-installed');
+
+      // Prevent zoom on iOS PWA
+      document.addEventListener('touchstart', function (event) {
+        if (event.touches.length > 1) {
+          event.preventDefault();
+        }
+      });
+    }
+  </script>
 </body>
 </html>
