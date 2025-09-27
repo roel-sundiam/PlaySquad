@@ -26,7 +26,7 @@ const server = createServer(app);
 const io = new Server(server, {
   cors: {
     origin: process.env.NODE_ENV === 'production'
-      ? [process.env.FRONTEND_URL || "https://playsquad-frontend.onrender.com"]
+      ? [process.env.FRONTEND_URL || "https://play-squad.netlify.app"]
       : ["http://localhost:4200", "http://localhost:4203"],
     methods: ["GET", "POST"]
   }
@@ -48,7 +48,7 @@ const limiter = rateLimit({
 app.use(helmet());
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
-    ? [process.env.FRONTEND_URL || "https://playsquad-frontend.onrender.com"]
+    ? [process.env.FRONTEND_URL || "https://play-squad.netlify.app"]
     : ["http://localhost:4200", "http://localhost:4203"],
   credentials: true
 }));
