@@ -155,7 +155,7 @@ import { SocketService } from '../../services/socket.service';
                     <span class="label">Members</span>
                     <span class="value">{{ club.memberCount }}</span>
                   </div>
-                  <div class="info-item">
+                  <div class="info-item hide-on-mobile">
                     <span class="label">Skill Level Range</span>
                     <span class="value">{{ club.settings.minSkillLevel }} - {{ club.settings.maxSkillLevel }}</span>
                   </div>
@@ -163,7 +163,7 @@ import { SocketService } from '../../services/socket.service';
                     <span class="label">Total Events</span>
                     <span class="value">{{ club.stats.totalEvents }}</span>
                   </div>
-                  <div class="info-item">
+                  <div class="info-item hide-on-mobile">
                     <span class="label">Total Matches</span>
                     <span class="value">{{ club.stats.totalMatches }}</span>
                   </div>
@@ -1134,8 +1134,26 @@ import { SocketService } from '../../services/socket.service';
       }
 
       .info-grid {
-        grid-template-columns: 1fr;
-        gap: 12px;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+
+      .hide-on-mobile {
+        display: none;
+      }
+
+      .info-item {
+        text-align: center;
+      }
+
+      .info-item .label {
+        font-size: 0.75rem;
+        margin-bottom: 4px;
+      }
+
+      .info-item .value {
+        font-size: 0.875rem;
+        font-weight: 600;
       }
 
       .chat-container {
