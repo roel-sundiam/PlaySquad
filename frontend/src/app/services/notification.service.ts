@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, firstValueFrom } from 'rxjs';
+import { BehaviorSubject, Observable, firstValueFrom, filter, take } from 'rxjs';
 import { ApiService } from './api.service';
 import { SocketService } from './socket.service';
+import { AuthService } from './auth.service';
 
 export interface Notification {
   _id: string;
@@ -58,10 +59,11 @@ export class NotificationService {
 
   constructor(
     private apiService: ApiService,
-    private socketService: SocketService
+    private socketService: SocketService,
+    private authService: AuthService
   ) {
     this.initializeSocketListeners();
-    this.loadInitialNotifications();
+    this.initializeAuthListener();
   }
 
   private initializeSocketListeners(): void {
@@ -131,8 +133,20 @@ export class NotificationService {
     }, 5000);
   }
 
+  private initializeAuthListener(): void {
+    // Load notifications when user becomes authenticated
+    this.authService.isAuthenticated$
+      .pipe(filter(isAuth => isAuth))
+      .subscribe(() => {
+        this.loadInitialNotifications();
+      });
+  }
+
   private async loadInitialNotifications(): Promise<void> {
     try {
+      if (!this.authService.isAuthenticated) {
+        return;
+      }
       const response = await this.getNotifications(20, 0);
       this.notificationsSubject.next(response.notifications);
       this.unreadCountSubject.next(response.unreadCount);
@@ -142,16 +156,25 @@ export class NotificationService {
   }
 
   async getNotifications(limit: number = 20, skip: number = 0): Promise<NotificationResponse> {
+    if (!this.authService.isAuthenticated) {
+      throw new Error('Not authenticated');
+    }
     const response = await firstValueFrom(this.apiService.get<NotificationResponse>(`notifications?limit=${limit}&skip=${skip}`));
     return response.data!;
   }
 
   async getUnreadCount(): Promise<number> {
+    if (!this.authService.isAuthenticated) {
+      return 0;
+    }
     const response = await firstValueFrom(this.apiService.get<{ unreadCount: number }>('notifications/unread-count'));
     return response.data!.unreadCount;
   }
 
   async markAsRead(notificationId: string): Promise<void> {
+    if (!this.authService.isAuthenticated) {
+      return;
+    }
     await firstValueFrom(this.apiService.put<any>(`notifications/${notificationId}/read`, {}));
     
     // Update local state
@@ -168,6 +191,9 @@ export class NotificationService {
   }
 
   async markAllAsRead(): Promise<void> {
+    if (!this.authService.isAuthenticated) {
+      return;
+    }
     await firstValueFrom(this.apiService.put<{ updatedCount: number }>('notifications/mark-all-read', {}));
     
     // Update local state
