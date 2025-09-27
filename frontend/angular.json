@@ -34,6 +34,7 @@
               "src/android-chrome-512x512.png",
               "src/manifest.json",
               "src/service-worker.js",
+              "src/_redirects",
               "src/assets"
             ],
             "styles": [
@@ -106,6 +107,7 @@
               "src/android-chrome-512x512.png",
               "src/manifest.json",
               "src/service-worker.js",
+              "src/_redirects",
               "src/assets"
             ],
             "styles": [
