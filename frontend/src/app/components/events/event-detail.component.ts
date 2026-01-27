@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
-import { EventService, Event } from '../../services/event.service';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { EventService, Event, CreateEventData } from '../../services/event.service';
 import { AuthService } from '../../services/auth.service';
 import { ModalService } from '../../services/modal.service';
 
@@ -9,413 +10,720 @@ import { ModalService } from '../../services/modal.service';
   template: `
     <div class="event-detail-page" *ngIf="event">
       <app-header></app-header>
-      
-      <!-- Page Navigation -->
-      <div class="page-nav">
-        <div class="nav-container">
-          <button class="btn-ghost" (click)="router.navigate(['/events'])">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="15,18 9,12 15,6"></polyline>
-            </svg>
-            Back to Events
-          </button>
-          <button class="btn-ghost" (click)="router.navigate(['/dashboard'])">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-              <polyline points="9,22 9,12 15,12 15,22"></polyline>
-            </svg>
-            Dashboard
-          </button>
+
+      <!-- Hero Section -->
+      <div class="hero-section">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+          <div class="breadcrumb">
+            <button class="breadcrumb-link" (click)="router.navigate(['/dashboard'])">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              </svg>
+              Home
+            </button>
+            <span class="separator">/</span>
+            <button class="breadcrumb-link" (click)="router.navigate(['/events'])">Events</button>
+            <span class="separator">/</span>
+            <span class="current">{{ event.title }}</span>
+          </div>
+
+          <div class="hero-info">
+            <div class="event-badge-group">
+              <span class="status-badge modern" [class]="'status-' + event.status">
+                <span class="badge-dot"></span>
+                {{ event.status | titlecase }}
+              </span>
+              <span class="format-badge" *ngIf="event.format">
+                🎾 {{ event.format | titlecase }}
+              </span>
+            </div>
+
+            <h1 class="event-title">{{ event.title }}</h1>
+            <p class="event-subtitle">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+              {{ event.club.name }}
+            </p>
+          </div>
         </div>
       </div>
 
-      <main class="main-content">
-        <div class="event-header">
-          <div class="event-title">
-            <h1>{{ event.title }}</h1>
-            <span class="status-badge" [class]="'status-' + event.status">
-              {{ event.status | titlecase }}
-            </span>
+      <main class="main-container">
+        <!-- Quick Stats Bar -->
+        <div class="quick-stats">
+          <div class="stat-item">
+            <div class="stat-icon calendar">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <span class="stat-label">Date & Time</span>
+              <span class="stat-value">{{ formatDate(event.dateTime) }}</span>
+            </div>
           </div>
-          <p class="event-club">{{ event.club.name }}</p>
+
+          <div class="stat-item">
+            <div class="stat-icon location">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <span class="stat-label">Location</span>
+              <span class="stat-value">{{ event.location.name }}</span>
+            </div>
+          </div>
+
+          <div class="stat-item">
+            <div class="stat-icon users">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <span class="stat-label">Participants</span>
+              <span class="stat-value">{{ event.attendingCount }}/{{ event.maxParticipants }}</span>
+            </div>
+          </div>
+
+          <div class="stat-item">
+            <div class="stat-icon clock">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <span class="stat-label">Duration</span>
+              <span class="stat-value">{{ event.duration }} min</span>
+            </div>
+          </div>
         </div>
 
-        <div class="event-content">
-          <div class="event-info">
-            <div class="info-section">
-              <h3>📅 Event Details</h3>
-              <div class="info-grid">
-                <div class="info-item">
-                  <span class="label">Date & Time</span>
-                  <span class="value">{{ formatDate(event.dateTime) }}</span>
+        <!-- Main Content Grid -->
+        <div class="content-grid">
+          <!-- Left Column -->
+          <div class="left-column">
+            <!-- Event Details Card -->
+            <div class="card modern-card">
+              <div class="card-header">
+                <h2>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  Event Details
+                </h2>
+              </div>
+              <div class="card-body">
+                <div class="detail-grid">
+                  <div class="detail-item">
+                    <span class="detail-icon">📍</span>
+                    <div>
+                      <p class="detail-label">Venue Address</p>
+                      <p class="detail-value">{{ event.location.address }}</p>
+                    </div>
+                  </div>
+
+                  <div class="detail-item" *ngIf="event.skillLevelRange && event.skillLevelRange.min">
+                    <span class="detail-icon">⭐</span>
+                    <div>
+                      <p class="detail-label">Skill Level Range</p>
+                      <p class="detail-value">{{ event.skillLevelRange.min }} - {{ event.skillLevelRange.max }}</p>
+                    </div>
+                  </div>
+
+                  <div class="detail-item" *ngIf="!event.format">
+                    <span class="detail-icon">🎯</span>
+                    <div>
+                      <p class="detail-label">Event Type</p>
+                      <p class="detail-value">{{ event.eventType | titlecase }}</p>
+                    </div>
+                  </div>
                 </div>
-                <div class="info-item">
-                  <span class="label">Duration</span>
-                  <span class="value">{{ event.duration }} minutes</span>
-                </div>
-                <div class="info-item" *ngIf="event.format">
-                  <span class="label">Format</span>
-                  <span class="value">{{ event.format | titlecase }}</span>
-                </div>
-                <div class="info-item" *ngIf="!event.format">
-                  <span class="label">Event Type</span>
-                  <span class="value">{{ event.eventType | titlecase }}</span>
-                </div>
-                <div class="info-item">
-                  <span class="label">Location</span>
-                  <span class="value">{{ event.location.name }}</span>
-                </div>
-                <div class="info-item">
-                  <span class="label">Address</span>
-                  <span class="value">{{ event.location.address }}</span>
-                </div>
-                <div class="info-item" *ngIf="event.skillLevelRange && event.skillLevelRange.min">
-                  <span class="label">Skill Level</span>
-                  <span class="value">{{ event.skillLevelRange.min }} - {{ event.skillLevelRange.max }}</span>
+
+                <div class="description-section" *ngIf="event.description">
+                  <h3>About This Event</h3>
+                  <p class="description-text">{{ event.description }}</p>
                 </div>
               </div>
             </div>
 
-            <div class="info-section" *ngIf="event.description">
-              <h3>📋 Description</h3>
-              <p>{{ event.description }}</p>
-            </div>
-
-            <div class="info-section">
-              <h3>👥 RSVP Status ({{ event.attendingCount }}/{{ event.maxParticipants }})</h3>
-              <div class="rsvp-stats">
-                <div class="stat">
-                  <span class="count">{{ getAttendingCount() }}</span>
-                  <span class="label">Attending</span>
-                </div>
-                <div class="stat">
-                  <span class="count">{{ getMaybeCount() }}</span>
-                  <span class="label">Maybe</span>
-                </div>
-                <div class="stat">
-                  <span class="count">{{ getDeclinedCount() }}</span>
-                  <span class="label">Declined</span>
-                </div>
+            <!-- RSVP Status Card -->
+            <div class="card modern-card">
+              <div class="card-header">
+                <h2>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                  RSVP Overview
+                </h2>
               </div>
+              <div class="card-body">
+                <div class="rsvp-summary">
+                  <div class="rsvp-card attending">
+                    <div class="rsvp-icon">✓</div>
+                    <div class="rsvp-count">{{ getAttendingCount() }}</div>
+                    <div class="rsvp-label">Attending</div>
+                  </div>
+                  <div class="rsvp-card maybe">
+                    <div class="rsvp-icon">?</div>
+                    <div class="rsvp-count">{{ getMaybeCount() }}</div>
+                    <div class="rsvp-label">Maybe</div>
+                  </div>
+                  <div class="rsvp-card declined">
+                    <div class="rsvp-icon">✗</div>
+                    <div class="rsvp-count">{{ getDeclinedCount() }}</div>
+                    <div class="rsvp-label">Declined</div>
+                  </div>
+                </div>
 
-              <div class="attendees-list" *ngIf="getAttendingRsvps().length > 0">
-                <h4>Attending Players</h4>
-                <div class="attendee-cards">
-                  <div class="attendee-card" *ngFor="let rsvp of getAttendingRsvps()">
-                    <div class="attendee-info">
+                <div class="attendees-section" *ngIf="getAttendingRsvps().length > 0">
+                  <h3>Attending Players ({{ getAttendingCount() }})</h3>
+                  <div class="attendees-grid">
+                    <div class="attendee-item" *ngFor="let rsvp of getAttendingRsvps()">
                       <div class="attendee-avatar" [style.background-image]="rsvp.user.avatar ? 'url(' + rsvp.user.avatar + ')' : 'none'">
-                        <span *ngIf="!rsvp.user.avatar" class="avatar-placeholder">{{ (rsvp.user.firstName || 'U').charAt(0).toUpperCase() }}</span>
+                        <span *ngIf="!rsvp.user.avatar" class="avatar-text">{{ (rsvp.user.firstName || 'U').charAt(0).toUpperCase() }}</span>
                       </div>
-                      <div>
+                      <div class="attendee-details">
                         <p class="attendee-name">{{ rsvp.user.firstName }} {{ rsvp.user.lastName }}</p>
-                        <p class="attendee-skill" *ngIf="rsvp.skillLevel">Skill Level: {{ rsvp.skillLevel }}</p>
+                        <p class="attendee-meta">
+                          <span *ngIf="rsvp.skillLevel">Level {{ rsvp.skillLevel }}</span>
+                          <span *ngIf="rsvp.preferredFormat" class="format-tag">{{ rsvp.preferredFormat }}</span>
+                        </p>
                       </div>
                     </div>
-                    <span class="format-badge" *ngIf="rsvp.preferredFormat">{{ rsvp.preferredFormat | titlecase }}</span>
                   </div>
                 </div>
               </div>
             </div>
 
             <!-- Organizer Controls -->
-            <div class="organizer-controls" *ngIf="canManageEvent()">
-              <h3>🎾 Organizer Controls</h3>
-              <div class="control-actions">
-                <button
-                  class="btn-primary"
-                  (click)="generateMatches()"
-                  [disabled]="!canGenerateMatches() || generatingMatches"
-                  *ngIf="!event.matchesGenerated"
-                >
-                  {{ generatingMatches ? 'Generating Matches...' : 'Generate Matches' }}
-                </button>
-                <button
-                  class="btn-secondary"
-                  (click)="generateMatches()"
-                  [disabled]="generatingMatches"
-                  *ngIf="event.matchesGenerated"
-                >
-                  {{ generatingMatches ? 'Regenerating...' : 'Regenerate Matches' }}
-                </button>
-                <div class="status-dropdown">
-                  <button class="btn-outline dropdown-toggle" (click)="toggleStatusDropdown()">
-                    Update Status
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" 
-                         [class.rotated]="statusDropdownOpen">
-                      <polyline points="6,9 12,15 18,9"></polyline>
-                    </svg>
-                  </button>
-                  <div class="dropdown-menu" *ngIf="statusDropdownOpen">
-                    <button class="dropdown-item" 
-                            *ngFor="let status of availableStatuses" 
-                            [class.current]="status.value === event.status"
-                            (click)="updateEventStatus(status.value)">
-                      <span class="status-dot" [class]="'dot-' + status.value"></span>
-                      {{ status.label }}
-                      <span class="current-badge" *ngIf="status.value === event.status">Current</span>
-                    </button>
-                  </div>
-                </div>
+            <div class="card modern-card control-card" *ngIf="canManageEvent()">
+              <div class="card-header">
+                <h2>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                    <line x1="12" y1="19" x2="12" y2="22"></line>
+                  </svg>
+                  Organizer Controls
+                </h2>
               </div>
+              <div class="card-body">
+                <div class="control-grid">
+                  <button
+                    class="control-btn primary"
+                    (click)="generateMatches()"
+                    [disabled]="!canGenerateMatches() || generatingMatches"
+                    *ngIf="!event.matchesGenerated"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                      <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                      <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                    </svg>
+                    {{ generatingMatches ? 'Generating...' : 'Generate Matches' }}
+                  </button>
 
-              <div class="match-requirements" *ngIf="!canGenerateMatches() && getAttendingCount() > 0 && event.format">
-                <p class="warning">
-                  ⚠️ Need at least {{ event.format === 'doubles' ? '4' : '2' }} attending players to generate matches.
-                  Currently have {{ getAttendingCount() }} players.
-                </p>
+                  <button
+                    class="control-btn secondary"
+                    (click)="generateMatches()"
+                    [disabled]="generatingMatches"
+                    *ngIf="event.matchesGenerated"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="23 4 23 10 17 10"></polyline>
+                      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg>
+                    {{ generatingMatches ? 'Regenerating...' : 'Regenerate Matches' }}
+                  </button>
+
+                  <div class="status-selector">
+                    <button class="control-btn status" (click)="toggleStatusDropdown()">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                      </svg>
+                      Update Status
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [class.rotated]="statusDropdownOpen" class="chevron">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
+                    </button>
+                    <div class="status-menu" *ngIf="statusDropdownOpen">
+                      <button
+                        class="status-option"
+                        *ngFor="let status of availableStatuses"
+                        [class.active]="status.value === event.status"
+                        (click)="updateEventStatus(status.value)"
+                      >
+                        <span class="status-indicator" [class]="'indicator-' + status.value"></span>
+                        <span>{{ status.label }}</span>
+                        <svg *ngIf="status.value === event.status" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  <button
+                    class="control-btn edit"
+                    (click)="openEditModal()"
+                    [disabled]="event.hasStarted"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    Edit Event
+                  </button>
+
+                  <button
+                    class="control-btn danger"
+                    (click)="deleteEvent()"
+                    [disabled]="event.hasStarted || deletingEvent"
+                  >
+                    <svg *ngIf="!deletingEvent" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      <line x1="10" y1="11" x2="10" y2="17"></line>
+                      <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                    <span class="spinner" *ngIf="deletingEvent"></span>
+                    {{ deletingEvent ? 'Deleting...' : 'Delete Event' }}
+                  </button>
+                </div>
+
+                <div class="warning-message" *ngIf="!canGenerateMatches() && getAttendingCount() > 0 && event.format">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                  </svg>
+                  Need at least {{ event.format === 'doubles' ? '4' : '2' }} attending players to generate matches. Currently have {{ getAttendingCount() }}.
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Matches Section -->
-          <div class="matches-section" *ngIf="event.matchesGenerated && event.matches.length > 0">
-            <div class="section-header">
-              <h2>🏆 Generated Matches</h2>
-              <p class="matchmaking-note">
-                ✨ <strong>Automated Matchmaking:</strong> Our AI algorithm has created balanced teams based on skill levels and preferences!
-              </p>
-            </div>
-
-            <div class="matches-grid">
-              <div class="match-card" *ngFor="let match of event.matches; let i = index">
-                <div class="match-header">
-                  <h4>{{ match.court }}</h4>
-                  <span class="match-time">{{ formatMatchTime(match.startTime, match.endTime) }}</span>
-                  <span class="match-status" [class]="'status-' + match.status">{{ match.status | titlecase }}</span>
-                </div>
-
-                <div class="match-teams">
-                  <div class="team">
-                    <h5>Team 1</h5>
-                    <div class="team-players">
-                      <div class="player" *ngFor="let player of match.players.team1">
-                        <div class="player-avatar" [style.background-image]="player.avatar ? 'url(' + player.avatar + ')' : 'none'">
-                          <span *ngIf="!player.avatar" class="avatar-placeholder">{{ (player.firstName || 'P').charAt(0).toUpperCase() }}</span>
-                        </div>
-                        <div>
-                          <p class="player-name">{{ player.firstName }} {{ player.lastName }}</p>
-                          <p class="player-skill">Level {{ player.skillLevel }}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="vs-divider">VS</div>
-
-                  <div class="team">
-                    <h5>Team 2</h5>
-                    <div class="team-players">
-                      <div class="player" *ngFor="let player of match.players.team2">
-                        <div class="player-avatar" [style.background-image]="player.avatar ? 'url(' + player.avatar + ')' : 'none'">
-                          <span *ngIf="!player.avatar" class="avatar-placeholder">{{ (player.firstName || 'P').charAt(0).toUpperCase() }}</span>
-                        </div>
-                        <div>
-                          <p class="player-name">{{ player.firstName }} {{ player.lastName }}</p>
-                          <p class="player-skill">Level {{ player.skillLevel }}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-
+          <!-- Right Column - Matches -->
+          <div class="right-column" *ngIf="event.matchesGenerated && event.matches.length > 0">
+            <div class="card modern-card matches-card">
+              <div class="card-header">
+                <h2>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+                    <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+                    <path d="M4 22h16"></path>
+                    <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
+                    <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
+                    <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
+                  </svg>
+                  Generated Matches
+                </h2>
+                <span class="matches-count">{{ event.matches.length }} matches</span>
               </div>
-            </div>
+              <div class="card-body">
+                <div class="matches-info-banner">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M12 16v-4"></path>
+                    <path d="M12 8h.01"></path>
+                  </svg>
+                  <p><strong>Automated Matchmaking:</strong> Teams are balanced based on skill levels and preferences</p>
+                </div>
 
-            <div class="matchmaking-info">
-              <h4>🤖 How Our Matchmaking Works</h4>
-              <ul>
-                <li><strong>Skill Balance:</strong> Players are paired to create balanced teams</li>
-                <li><strong>Format Preferences:</strong> We consider your preferred playing style</li>
-                <li><strong>Fair Distribution:</strong> Strongest players are paired with newer players</li>
-                <li><strong>Court Assignment:</strong> Matches are automatically assigned to available courts</li>
-              </ul>
+                <div class="matches-list">
+                  <div class="match-item" *ngFor="let match of event.matches; let i = index">
+                    <div class="match-info-bar">
+                      <span class="court-name">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        {{ match.court }}
+                      </span>
+                      <span class="match-time-badge">{{ formatMatchTime(match.startTime, match.endTime) }}</span>
+                      <span class="match-status-badge" [class]="'match-status-' + match.status">{{ match.status | titlecase }}</span>
+                    </div>
+
+                    <div class="teams-container">
+                      <div class="team team-1">
+                        <div class="team-header">Team 1</div>
+                        <div class="team-members">
+                          <div class="team-player" *ngFor="let player of match.players.team1">
+                            <div class="player-avatar-sm" [style.background-image]="player.avatar ? 'url(' + player.avatar + ')' : 'none'">
+                              <span *ngIf="!player.avatar">{{ (player.firstName || 'P').charAt(0) }}</span>
+                            </div>
+                            <div class="player-info">
+                              <p class="player-name-sm">{{ player.firstName }} {{ player.lastName }}</p>
+                              <p class="player-level">Lvl {{ player.skillLevel }}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="vs-badge">VS</div>
+
+                      <div class="team team-2">
+                        <div class="team-header">Team 2</div>
+                        <div class="team-members">
+                          <div class="team-player" *ngFor="let player of match.players.team2">
+                            <div class="player-avatar-sm" [style.background-image]="player.avatar ? 'url(' + player.avatar + ')' : 'none'">
+                              <span *ngIf="!player.avatar">{{ (player.firstName || 'P').charAt(0) }}</span>
+                            </div>
+                            <div class="player-info">
+                              <p class="player-name-sm">{{ player.firstName }} {{ player.lastName }}</p>
+                              <p class="player-level">Lvl {{ player.skillLevel }}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </main>
+
+      <!-- Edit Event Modal -->
+      <div class="modal-overlay" *ngIf="showEditModal" (click)="closeEditModal()">
+        <div class="modal-container" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h2>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+              Edit Event
+            </h2>
+            <button class="modal-close" (click)="closeEditModal()">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+
+          <div class="modal-warning" *ngIf="event.matchesGenerated">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+              <line x1="12" y1="9" x2="12" y2="13"></line>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            <p>This event has generated matches. Editing may invalidate match assignments. You can regenerate matches after saving.</p>
+          </div>
+
+          <form [formGroup]="editForm" (ngSubmit)="submitEdit()">
+            <div class="form-grid">
+              <div class="form-field full-width">
+                <label for="title">Event Title</label>
+                <input type="text" id="title" formControlName="title" class="input-field">
+              </div>
+
+              <div class="form-field">
+                <label for="eventDate">Event Date</label>
+                <input type="date" id="eventDate" formControlName="eventDate" class="input-field">
+              </div>
+
+              <div class="form-field">
+                <label for="eventTime">Event Time</label>
+                <select id="eventTime" formControlName="eventTime" class="input-field">
+                  <option *ngFor="let time of timeOptions" [value]="time">{{ time }}</option>
+                </select>
+              </div>
+
+              <div class="form-field">
+                <label for="duration">Duration (minutes)</label>
+                <input type="number" id="duration" formControlName="duration" class="input-field" min="30" max="480">
+              </div>
+
+              <div class="form-field" *ngIf="event.format">
+                <label for="format">Format</label>
+                <select id="format" formControlName="format" class="input-field">
+                  <option value="singles">Singles</option>
+                  <option value="doubles">Doubles</option>
+                  <option value="mixed">Mixed</option>
+                </select>
+              </div>
+
+              <div class="form-field" [class.full-width]="!event.format">
+                <label for="maxParticipants">Max Participants</label>
+                <input type="number" id="maxParticipants" formControlName="maxParticipants" class="input-field" min="2" max="100">
+              </div>
+
+              <div class="form-field full-width">
+                <label for="description">Description</label>
+                <textarea id="description" formControlName="description" class="input-field textarea" rows="3"></textarea>
+              </div>
+
+              <div class="form-field">
+                <label for="locationName">Location Name</label>
+                <input type="text" id="locationName" formControlName="locationName" class="input-field">
+              </div>
+
+              <div class="form-field">
+                <label for="locationAddress">Address</label>
+                <input type="text" id="locationAddress" formControlName="locationAddress" class="input-field">
+              </div>
+
+              <div class="form-field full-width">
+                <label for="rsvpDeadline">RSVP Deadline</label>
+                <input type="date" id="rsvpDeadline" formControlName="rsvpDeadline" class="input-field">
+              </div>
+            </div>
+
+            <div class="modal-actions">
+              <button type="button" class="btn-cancel" (click)="closeEditModal()">Cancel</button>
+              <button type="submit" class="btn-submit" [disabled]="editForm.invalid || updatingEvent">
+                <svg *ngIf="!updatingEvent" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span class="spinner-sm" *ngIf="updatingEvent"></span>
+                {{ updatingEvent ? 'Updating...' : 'Update Event' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   `,
   styles: [`
-    /* Global Background - Design Guide Standard */
+    /* Modern Design System */
+    :host {
+      --primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      --success: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      --warning: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+      --danger: linear-gradient(135deg, #f857a6 0%, #ff5858 100%);
+      --surface: #ffffff;
+      --surface-hover: #f8f9fa;
+      --border: #e9ecef;
+      --text-primary: #212529;
+      --text-secondary: #6c757d;
+      --text-muted: #adb5bd;
+      --shadow-sm: 0 2px 4px rgba(0,0,0,0.04);
+      --shadow: 0 4px 6px rgba(0,0,0,0.07);
+      --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+      --shadow-xl: 0 20px 25px rgba(0,0,0,0.15);
+      --radius: 16px;
+      --radius-sm: 12px;
+      --radius-lg: 20px;
+    }
+
     .event-detail-page {
       min-height: 100vh;
-      background: linear-gradient(135deg, #64748b 0%, #94a3b8 50%, #cbd5e1 100%);
+      background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
     }
 
-    .page-nav {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-      padding: 12px 0;
+    /* Hero Section */
+    .hero-section {
+      position: relative;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 6rem 2rem 4rem;
+      overflow: hidden;
     }
 
-    .nav-container {
-      max-width: 1536px;
-      margin: 0 auto;
-      padding: 0 24px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 50%);
     }
 
-    .btn-ghost {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
-      background: transparent;
-      border: none;
-      border-radius: 8px;
-      color: #64748b;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 200ms ease;
-    }
-
-    .btn-ghost:hover {
-      background: rgba(100, 116, 139, 0.1);
-      color: #334155;
-    }
-
-    /* Main Content Container - Design Guide Standard */
-    .main-content {
+    .hero-content {
+      position: relative;
       max-width: 1200px;
       margin: 0 auto;
-      padding: 32px 24px;
-      background: #ffffff;
-      border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-      margin-top: 24px;
-      margin-bottom: 24px;
+      z-index: 1;
     }
 
-    /* Hero Section - Design Guide Standard */
-    .hero-section {
-      background: linear-gradient(135deg, rgba(251, 146, 60, 0.15) 0%, rgba(34, 197, 94, 0.1) 50%, rgba(59, 130, 246, 0.1) 100%);
-      border: 1px solid rgba(251, 146, 60, 0.3);
-      padding: 2rem;
-      border-radius: 16px;
-      backdrop-filter: blur(20px);
-      margin-bottom: 32px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 24px;
-    }
-
-    .hero-content h1 {
-      margin: 0 0 12px 0;
-      color: #000000;
-      font-size: 2.5rem;
-      font-weight: 700;
-      font-family: 'Poppins', sans-serif;
-    }
-
-    .event-meta {
+    .breadcrumb {
       display: flex;
       align-items: center;
-      gap: 16px;
-      margin-bottom: 8px;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+      font-size: 0.875rem;
     }
 
-    .club-name {
-      color: #fb923c;
-      font-size: 1.2rem;
-      font-weight: 600;
+    .breadcrumb-link {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
     }
 
-    .status-badge {
-      padding: 8px 16px;
+    .breadcrumb-link:hover {
+      background: rgba(255,255,255,0.25);
+      transform: translateY(-1px);
+    }
+
+    .separator {
+      color: rgba(255,255,255,0.5);
+    }
+
+    .current {
+      color: white;
+      font-weight: 500;
+    }
+
+    .hero-info {
+      color: white;
+    }
+
+    .event-badge-group {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .status-badge.modern {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
       border-radius: 20px;
       font-size: 0.875rem;
       font-weight: 600;
+      backdrop-filter: blur(10px);
+    }
+
+    .badge-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
     }
 
     .status-published {
-      background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.1));
-      color: #16a34a;
+      background: rgba(34, 197, 94, 0.2);
       border: 1px solid rgba(34, 197, 94, 0.3);
+      color: #fff;
+    }
+
+    .status-published .badge-dot {
+      background: #22c55e;
     }
 
     .status-ongoing {
-      background: linear-gradient(135deg, rgba(251, 146, 60, 0.15), rgba(251, 146, 60, 0.1));
-      color: #ea580c;
+      background: rgba(251, 146, 60, 0.2);
       border: 1px solid rgba(251, 146, 60, 0.3);
+      color: #fff;
+    }
+
+    .status-ongoing .badge-dot {
+      background: #fb923c;
     }
 
     .status-completed {
-      background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.1));
-      color: #2563eb;
+      background: rgba(59, 130, 246, 0.2);
       border: 1px solid rgba(59, 130, 246, 0.3);
+      color: #fff;
+    }
+
+    .status-completed .badge-dot {
+      background: #3b82f6;
+    }
+
+    .status-cancelled {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fff;
+    }
+
+    .status-cancelled .badge-dot {
+      background: #ef4444;
+    }
+
+    .format-badge {
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    .event-title {
+      font-size: 3rem;
+      font-weight: 700;
+      margin: 0 0 1rem;
+      line-height: 1.2;
     }
 
     .event-subtitle {
-      color: #475569;
-      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.25rem;
       margin: 0;
+      opacity: 0.9;
     }
 
-    .hero-actions {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      flex-wrap: wrap;
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
     }
 
-    /* Statistics Grid - Design Guide Standard */
-    .stats-grid {
+    /* Main Container */
+    .main-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 2rem 4rem;
+      transform: translateY(-3rem);
+    }
+
+    /* Quick Stats */
+    .quick-stats {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 0.75rem;
-      margin-bottom: 32px;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
     }
 
-    @media (min-width: 1024px) {
-      .stats-grid {
-        grid-template-columns: repeat(4, 1fr);
-        gap: 1rem;
-      }
-    }
-
-    .stat-card {
-      background: rgba(255, 255, 255, 0.25);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.4);
+    .stat-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
       padding: 1.5rem;
-      min-height: 120px;
-      border-radius: 16px;
       display: flex;
-      align-items: center;
-      gap: 16px;
-      transition: all 200ms ease;
+      gap: 1rem;
+      align-items: flex-start;
+      transition: all 0.3s;
+      box-shadow: var(--shadow-sm);
     }
 
-    .stat-card:hover {
+    .stat-item:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(251, 146, 60, 0.15);
-      border-color: rgba(251, 146, 60, 0.4);
-    }
-
-    .stat-card.attendees .stat-icon {
-      background: linear-gradient(135deg, #22c55e, #16a34a);
-      color: white;
-    }
-
-    .stat-card.duration .stat-icon {
-      background: linear-gradient(135deg, #fb923c, #f59e0b);
-      color: white;
-    }
-
-    .stat-card.capacity .stat-icon {
-      background: linear-gradient(135deg, #f97316, #ea580c);
-      color: white;
-    }
-
-    .stat-card.matches .stat-icon {
-      background: linear-gradient(135deg, #fb923c, #f59e0b);
-      color: white;
+      box-shadow: var(--shadow);
     }
 
     .stat-icon {
@@ -428,684 +736,835 @@ import { ModalService } from '../../services/modal.service';
       flex-shrink: 0;
     }
 
+    .stat-icon.calendar {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .stat-icon.location {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+    }
+
+    .stat-icon.users {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      color: white;
+    }
+
+    .stat-icon.clock {
+      background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+      color: white;
+    }
+
     .stat-content {
       display: flex;
       flex-direction: column;
-    }
-
-    .stat-number {
-      font-size: 1.875rem;
-      font-weight: 700;
-      color: #1e293b;
-      line-height: 1;
-      margin-bottom: 4px;
+      gap: 0.25rem;
     }
 
     .stat-label {
       font-size: 0.875rem;
-      color: #475569;
+      color: var(--text-secondary);
       font-weight: 500;
+    }
+
+    .stat-value {
+      font-size: 1.125rem;
+      color: var(--text-primary);
+      font-weight: 600;
     }
 
     /* Content Grid */
     .content-grid {
       display: grid;
-      gap: 24px;
       grid-template-columns: 1fr;
-    }
-
-    @media (min-width: 768px) {
-      .content-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
+      gap: 2rem;
     }
 
     @media (min-width: 1024px) {
       .content-grid {
-        grid-template-columns: repeat(1, 1fr);
+        grid-template-columns: 1fr 1fr;
       }
     }
 
-    /* Content Cards - Design Guide Standard */
-    .content-card {
-      background: linear-gradient(135deg, rgba(251, 146, 60, 0.08) 0%, rgba(255, 255, 255, 0.2) 100%);
-      border: 1px solid rgba(251, 146, 60, 0.2);
-      backdrop-filter: blur(20px);
-      border-radius: 16px;
+    /* Modern Cards */
+    .modern-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
       overflow: hidden;
-      transition: all 200ms ease;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.3s;
+      margin-bottom: 1.5rem;
     }
 
-    .content-card:hover {
-      border-color: rgba(251, 146, 60, 0.4);
-      box-shadow: 0 8px 25px rgba(251, 146, 60, 0.15);
-      transform: translateY(-2px);
+    .modern-card:hover {
+      box-shadow: var(--shadow);
     }
 
     .card-header {
-      padding: 24px 24px 0 24px;
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, var(--surface) 0%, var(--surface-hover) 100%);
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      margin-bottom: 16px;
+      justify-content: space-between;
     }
 
     .card-header h2 {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
       margin: 0;
-      color: #000000;
-      font-size: 1.5rem;
+      font-size: 1.25rem;
       font-weight: 600;
-      font-family: 'Poppins', sans-serif;
+      color: var(--text-primary);
     }
 
-    .badge {
-      background: linear-gradient(135deg, #fb923c, #f59e0b);
+    .card-header h2 svg {
+      color: #667eea;
+    }
+
+    .matches-count {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
-      padding: 6px 12px;
+      padding: 0.375rem 0.75rem;
       border-radius: 12px;
       font-size: 0.875rem;
       font-weight: 600;
     }
 
-    .card-content {
-      padding: 0 24px 24px 24px;
+    .card-body {
+      padding: 1.5rem;
     }
 
-    .info-grid {
+    /* Detail Grid */
+    .detail-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 16px;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
     }
 
-    .info-item {
+    .detail-item {
       display: flex;
-      flex-direction: column;
-      gap: 4px;
+      gap: 1rem;
+      align-items: flex-start;
     }
 
-    .info-item .label {
-      font-size: 0.9em;
-      color: #666;
+    .detail-icon {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+
+    .detail-label {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin: 0 0 0.25rem;
+    }
+
+    .detail-value {
+      font-size: 1rem;
+      color: var(--text-primary);
       font-weight: 500;
+      margin: 0;
     }
 
-    .info-item .value {
+    .description-section {
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .description-section h3 {
+      font-size: 1rem;
       font-weight: 600;
-      color: #1e293b;
+      color: var(--text-primary);
+      margin: 0 0 0.75rem;
     }
 
     .description-text {
-      color: #475569;
+      font-size: 0.9375rem;
+      color: var(--text-secondary);
       line-height: 1.6;
       margin: 0;
     }
 
-    /* RSVP Statistics */
-    .rsvp-stats {
+    /* RSVP Summary */
+    .rsvp-summary {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-      margin-bottom: 24px;
+      gap: 1rem;
+      margin-bottom: 2rem;
     }
 
-    .rsvp-stat {
+    .rsvp-card {
+      background: var(--surface-hover);
+      border-radius: var(--radius-sm);
+      padding: 1.5rem;
       text-align: center;
-      padding: 16px;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.5);
-      border: 1px solid rgba(251, 146, 60, 0.1);
+      transition: all 0.2s;
+      border: 2px solid transparent;
     }
 
-    .rsvp-stat.attending {
-      background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
-      border-color: rgba(34, 197, 94, 0.3);
-    }
-
-    .rsvp-stat.maybe {
-      background: linear-gradient(135deg, rgba(251, 146, 60, 0.1), rgba(251, 146, 60, 0.05));
-      border-color: rgba(251, 146, 60, 0.3);
-    }
-
-    .rsvp-stat.declined {
-      background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05));
-      border-color: rgba(239, 68, 68, 0.3);
-    }
-
-    .rsvp-stat .count {
-      display: block;
-      font-size: 2rem;
-      font-weight: 700;
-      color: #1e293b;
-      line-height: 1;
-      margin-bottom: 4px;
-    }
-
-    .rsvp-stat .label {
-      display: block;
-      color: #475569;
-      font-size: 0.875rem;
-      font-weight: 500;
-    }
-
-    .attendees-list h4 {
-      margin: 0 0 16px 0;
-      color: #1e293b;
-      font-weight: 600;
-    }
-
-    .attendee-cards {
-      display: grid;
-      gap: 12px;
-    }
-
-    /* List Items - Design Guide Standard */
-    .list-item {
-      background: linear-gradient(135deg, rgba(251, 146, 60, 0.15) 0%, rgba(249, 115, 22, 0.1) 100%);
-      border: 1px solid rgba(251, 146, 60, 0.3);
-      border-radius: 12px;
-      padding: 16px;
-      transition: all 200ms ease;
-    }
-
-    .list-item:hover {
-      border-color: rgba(251, 146, 60, 0.8);
-      box-shadow: 0 8px 25px rgba(251, 146, 60, 0.2);
+    .rsvp-card:hover {
       transform: translateY(-2px);
     }
 
-    .attendee-card {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .rsvp-card.attending {
+      border-color: #22c55e;
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, rgba(34, 197, 94, 0.02) 100%);
     }
 
-    .attendee-info {
+    .rsvp-card.maybe {
+      border-color: #f59e0b;
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(245, 158, 11, 0.02) 100%);
+    }
+
+    .rsvp-card.declined {
+      border-color: #ef4444;
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(239, 68, 68, 0.02) 100%);
+    }
+
+    .rsvp-icon {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .rsvp-count {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .rsvp-label {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    /* Attendees */
+    .attendees-section h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0 0 1rem;
+      color: var(--text-primary);
+    }
+
+    .attendees-grid {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .attendee-item {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 1rem;
+      padding: 0.75rem;
+      background: var(--surface-hover);
+      border-radius: var(--radius-sm);
+      transition: all 0.2s;
+    }
+
+    .attendee-item:hover {
+      background: #e9ecef;
     }
 
     .attendee-avatar {
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       background-size: cover;
       background-position: center;
-      background-color: #00C853;
       display: flex;
       align-items: center;
       justify-content: center;
       color: white;
       font-weight: 600;
-      font-size: 16px;
       flex-shrink: 0;
+    }
+
+    .avatar-text {
+      font-size: 1.125rem;
+    }
+
+    .attendee-details {
+      flex: 1;
     }
 
     .attendee-name {
-      margin: 0 0 4px 0;
+      margin: 0 0 0.25rem;
       font-weight: 600;
-      color: #1e293b;
+      color: var(--text-primary);
+      font-size: 0.9375rem;
     }
 
-    .attendee-skill {
+    .attendee-meta {
       margin: 0;
-      font-size: 0.875rem;
-      color: #475569;
-    }
-
-    .format-badge {
-      background: linear-gradient(135deg, #22c55e, #16a34a);
-      color: white;
-      padding: 6px 12px;
-      border-radius: 12px;
-      font-size: 0.75rem;
-      font-weight: 600;
-    }
-
-    .control-actions {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
       display: flex;
-      gap: 12px;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
     }
 
-    .warning-card {
-      color: #ea580c;
-      background: linear-gradient(135deg, rgba(251, 146, 60, 0.1), rgba(249, 115, 22, 0.05));
-      border: 1px solid rgba(251, 146, 60, 0.3);
-      padding: 16px;
-      border-radius: 12px;
-      margin: 16px 0 0 0;
+    .format-tag {
+      background: #667eea;
+      color: white;
+      padding: 0.125rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
       font-weight: 500;
     }
 
-    .matches-card {
-      grid-column: 1 / -1;
+    /* Control Card */
+    .control-card {
+      position: sticky;
+      top: 1rem;
     }
 
-    .matchmaking-note {
-      background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
-      border: 1px solid rgba(34, 197, 94, 0.3);
-      padding: 16px;
-      border-radius: 12px;
-      margin: 0 0 24px 0;
-      color: #16a34a;
-      font-weight: 500;
-    }
-
-    .matches-grid {
+    .control-grid {
       display: grid;
-      gap: 20px;
-      margin-bottom: 32px;
+      gap: 0.75rem;
     }
 
-    .match-card {
-      padding: 20px;
-    }
-
-    .match-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .match-header h4 {
-      margin: 0;
-      color: #1e293b;
-      font-size: 1.2rem;
-      font-weight: 600;
-    }
-
-    .match-time {
-      color: #475569;
-      font-size: 0.875rem;
-    }
-
-    .match-status {
-      padding: 6px 12px;
-      border-radius: 12px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      background: linear-gradient(135deg, #fb923c, #f59e0b);
-      color: white;
-    }
-
-    .match-teams {
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      gap: 20px;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-
-    .team h5 {
-      margin: 0 0 12px 0;
-      color: #1e293b;
-      text-align: center;
-      font-weight: 600;
-    }
-
-    .team-players {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .player {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px;
-      background: rgba(255, 255, 255, 0.3);
-      border: 1px solid rgba(251, 146, 60, 0.2);
-      border-radius: 8px;
-    }
-
-    .player-avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background-size: cover;
-      background-position: center;
-      background-color: #00C853;
+    .control-btn {
       display: flex;
       align-items: center;
       justify-content: center;
-      color: white;
+      gap: 0.5rem;
+      padding: 0.875rem 1.25rem;
+      border-radius: var(--radius-sm);
       font-weight: 600;
-      font-size: 14px;
-      flex-shrink: 0;
-    }
-
-    .avatar-placeholder {
-      display: block;
-    }
-
-    .player-name {
-      margin: 0;
-      font-weight: 600;
-      color: #1e293b;
-      font-size: 0.875rem;
-    }
-
-    .player-skill {
-      margin: 0;
-      color: #475569;
-      font-size: 0.75rem;
-    }
-
-    .vs-divider {
-      background: linear-gradient(135deg, #fb923c, #f59e0b);
-      color: white;
-      padding: 12px 20px;
-      border-radius: 50px;
-      font-weight: 700;
-      text-align: center;
-      font-size: 0.875rem;
-      box-shadow: 0 4px 12px rgba(251, 146, 60, 0.3);
-    }
-
-
-    .winner-badge {
-      background: linear-gradient(135deg, #00C853, #4CAF50);
-      color: white;
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-weight: 600;
-      display: inline-block;
-    }
-
-    .match-actions {
-      text-align: center;
-    }
-
-    .matchmaking-info {
-      background: linear-gradient(135deg, rgba(251, 146, 60, 0.08), rgba(255, 255, 255, 0.1));
-      border: 1px solid rgba(251, 146, 60, 0.2);
-      padding: 20px;
-      border-radius: 12px;
-      margin-top: 24px;
-    }
-
-    .matchmaking-info h4 {
-      margin: 0 0 12px 0;
-      color: #1e293b;
-      font-weight: 600;
-    }
-
-    .matchmaking-info ul {
-      margin: 0;
-      padding-left: 20px;
-    }
-
-    .matchmaking-info li {
-      margin-bottom: 8px;
-      color: #475569;
-    }
-
-    /* Button Styles - Design Guide Standard */
-    .btn-primary, .btn-secondary, .btn-outline {
-      padding: 12px 24px;
-      border-radius: 12px;
-      font-weight: 600;
-      cursor: pointer;
+      font-size: 0.9375rem;
       border: none;
-      transition: all 200ms ease;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s;
     }
 
-    .btn-primary {
-      background: linear-gradient(135deg, #3b82f6, #2563eb);
-      color: white;
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-    }
-
-    .btn-primary:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
-    }
-
-    .btn-primary:disabled {
-      opacity: 0.6;
+    .control-btn:disabled {
+      opacity: 0.5;
       cursor: not-allowed;
-      transform: none;
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
     }
 
-    .btn-secondary {
-      background: rgba(255, 255, 255, 0.8);
-      color: #475569;
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      backdrop-filter: blur(10px);
-    }
-
-    .btn-secondary:hover {
-      background: rgba(255, 255, 255, 0.9);
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-    }
-
-    .btn-outline {
-      background: transparent;
-      color: #fb923c;
-      border: 2px solid #fb923c;
-    }
-
-    .btn-outline:hover:not(:disabled) {
-      background: linear-gradient(135deg, #fb923c, #f59e0b);
+    .control-btn.primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .control-btn.primary:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(251, 146, 60, 0.3);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
     }
 
-    /* Status Dropdown Styles - Design Guide Standard */
-    .status-dropdown {
+    .control-btn.secondary {
+      background: var(--surface-hover);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .control-btn.secondary:hover:not(:disabled) {
+      background: #e9ecef;
+    }
+
+    .status-selector {
       position: relative;
-      display: inline-block;
     }
 
-    .dropdown-toggle {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    .control-btn.status {
+      background: var(--surface-hover);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      justify-content: space-between;
     }
 
-    .dropdown-toggle svg {
-      transition: transform 200ms ease;
+    .chevron {
+      transition: transform 0.2s;
     }
 
-    .dropdown-toggle svg.rotated {
+    .chevron.rotated {
       transform: rotate(180deg);
     }
 
-    .dropdown-menu {
+    .status-menu {
       position: absolute;
-      top: 100%;
+      top: calc(100% + 0.5rem);
       left: 0;
       right: 0;
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(251, 146, 60, 0.3);
-      border-radius: 12px;
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-      z-index: 1000;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-lg);
       overflow: hidden;
-      margin-top: 8px;
-      min-width: 180px;
+      z-index: 10;
     }
 
-    .dropdown-item {
+    .status-option {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
       width: 100%;
-      padding: 12px 16px;
-      background: transparent;
+      padding: 0.875rem 1.25rem;
+      background: none;
       border: none;
       text-align: left;
       cursor: pointer;
-      transition: all 200ms ease;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-weight: 500;
-      color: #1e293b;
-      position: relative;
+      transition: all 0.2s;
+      font-size: 0.9375rem;
     }
 
-    .dropdown-item:hover {
-      background: linear-gradient(135deg, rgba(251, 146, 60, 0.1), rgba(251, 146, 60, 0.05));
-      color: #ea580c;
+    .status-option:hover {
+      background: var(--surface-hover);
     }
 
-    .dropdown-item.current {
-      background: linear-gradient(135deg, rgba(251, 146, 60, 0.15), rgba(251, 146, 60, 0.08));
-      color: #ea580c;
+    .status-option.active {
+      background: linear-gradient(90deg, rgba(102, 126, 234, 0.1) 0%, transparent 100%);
       font-weight: 600;
     }
 
-    .status-dot {
+    .status-indicator {
       width: 10px;
       height: 10px;
       border-radius: 50%;
       flex-shrink: 0;
     }
 
-    .status-dot.dot-published {
-      background: linear-gradient(135deg, #22c55e, #16a34a);
-      box-shadow: 0 2px 4px rgba(34, 197, 94, 0.3);
-    }
+    .indicator-published { background: #22c55e; }
+    .indicator-ongoing { background: #fb923c; }
+    .indicator-completed { background: #3b82f6; }
+    .indicator-cancelled { background: #ef4444; }
 
-    .status-dot.dot-ongoing {
-      background: linear-gradient(135deg, #fb923c, #f59e0b);
-      box-shadow: 0 2px 4px rgba(251, 146, 60, 0.3);
-    }
-
-    .status-dot.dot-completed {
-      background: linear-gradient(135deg, #3b82f6, #2563eb);
-      box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
-    }
-
-    .status-dot.dot-cancelled {
-      background: linear-gradient(135deg, #ef4444, #dc2626);
-      box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
-    }
-
-    .current-badge {
-      background: linear-gradient(135deg, #fb923c, #f59e0b);
+    .control-btn.edit {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
       color: white;
-      padding: 2px 8px;
-      border-radius: 8px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      margin-left: auto;
+      box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
     }
 
-    /* Responsive Design - Design Guide Standard */
+    .control-btn.edit:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(79, 172, 254, 0.4);
+    }
+
+    .control-btn.danger {
+      background: transparent;
+      color: #ef4444;
+      border: 2px solid rgba(239, 68, 68, 0.2);
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .control-btn.danger::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, #f857a6 0%, #ff5858 100%);
+      z-index: -1;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .control-btn.danger:hover:not(:disabled) {
+      color: white;
+      border-color: #ef4444;
+      transform: translateY(-2px);
+    }
+
+    .control-btn.danger:hover:not(:disabled)::before {
+      opacity: 1;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .warning-message {
+      display: flex;
+      gap: 0.75rem;
+      padding: 1rem;
+      background: linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(251, 146, 60, 0.05) 100%);
+      border: 1px solid rgba(251, 146, 60, 0.2);
+      border-radius: var(--radius-sm);
+      color: #ea580c;
+      font-size: 0.875rem;
+      margin-top: 1rem;
+    }
+
+    /* Matches */
+    .matches-info-banner {
+      display: flex;
+      gap: 0.75rem;
+      padding: 1rem;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(102, 126, 234, 0.05) 100%);
+      border: 1px solid rgba(102, 126, 234, 0.2);
+      border-radius: var(--radius-sm);
+      margin-bottom: 1.5rem;
+      color: #667eea;
+      font-size: 0.875rem;
+    }
+
+    .matches-list {
+      display: grid;
+      gap: 1.5rem;
+    }
+
+    .match-item {
+      background: var(--surface-hover);
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .match-info-bar {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.5rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .court-name {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .match-time-badge {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    .match-status-badge {
+      margin-left: auto;
+      padding: 0.375rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.8125rem;
+      font-weight: 600;
+    }
+
+    .match-status-scheduled {
+      background: rgba(102, 126, 234, 0.1);
+      color: #667eea;
+    }
+
+    .teams-container {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 1.5rem;
+      padding: 1.5rem;
+      align-items: center;
+    }
+
+    .team {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .team-header {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .team-members {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .team-player {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem;
+      background: var(--surface);
+      border-radius: 10px;
+    }
+
+    .player-avatar-sm {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background-size: cover;
+      background-position: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 0.875rem;
+      flex-shrink: 0;
+    }
+
+    .player-info {
+      flex: 1;
+    }
+
+    .player-name-sm {
+      margin: 0 0 0.125rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .player-level {
+      margin: 0;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .vs-badge {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-weight: 700;
+      font-size: 0.875rem;
+      padding: 0.75rem 1.25rem;
+      border-radius: 20px;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 2rem;
+    }
+
+    .modal-container {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      max-width: 640px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-xl);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-header h2 {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .modal-header h2 svg {
+      color: #667eea;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 0.5rem;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .modal-close:hover {
+      background: var(--surface-hover);
+      color: var(--text-primary);
+    }
+
+    .modal-warning {
+      display: flex;
+      gap: 0.75rem;
+      margin: 1.5rem 2rem 0;
+      padding: 1rem;
+      background: linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(251, 146, 60, 0.05) 100%);
+      border: 1px solid rgba(251, 146, 60, 0.2);
+      border-radius: var(--radius-sm);
+      color: #ea580c;
+      font-size: 0.875rem;
+    }
+
+    form {
+      padding: 2rem;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+    }
+
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .form-field.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .form-field label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .input-field {
+      padding: 0.875rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.9375rem;
+      transition: all 0.2s;
+      background: var(--surface);
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .input-field.textarea {
+      resize: vertical;
+      min-height: 80px;
+      font-family: inherit;
+    }
+
+    select.input-field {
+      cursor: pointer;
+      appearance: none;
+      background-image: url('data:image/svg+xml;charset=UTF-8,<svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L6 6L11 1" stroke="%236c757d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+      background-repeat: no-repeat;
+      background-position: right 0.875rem center;
+      padding-right: 2.5rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: flex-end;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      margin-top: 1.5rem;
+    }
+
+    .btn-cancel {
+      padding: 0.875rem 1.5rem;
+      background: var(--surface-hover);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-cancel:hover {
+      background: #e9ecef;
+    }
+
+    .btn-submit {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.875rem 1.5rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-submit:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .spinner-sm {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    /* Responsive */
     @media (max-width: 768px) {
-      .main-content {
-        margin: 12px;
-        padding: 24px 16px;
-      }
-
       .hero-section {
-        flex-direction: column;
-        align-items: flex-start;
-        padding: 1.5rem;
+        padding: 4rem 1rem 3rem;
       }
 
-      .hero-content h1 {
+      .event-title {
         font-size: 2rem;
       }
 
-      .hero-actions {
-        width: 100%;
-        justify-content: center;
+      .main-container {
+        padding: 0 1rem 3rem;
       }
 
-      .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
+      .quick-stats {
+        grid-template-columns: 1fr;
+        gap: 1rem;
       }
 
-      .stat-card {
-        min-height: 100px;
-        padding: 1rem;
-      }
-
-      .stat-number {
-        font-size: 1.5rem;
-      }
-
-      .info-grid {
+      .content-grid {
         grid-template-columns: 1fr;
       }
 
-      .rsvp-stats {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-      }
-
-      .rsvp-stat {
-        padding: 12px 8px;
-      }
-
-      .rsvp-stat .count {
-        font-size: 1.5rem;
-      }
-
-      .match-teams {
+      .teams-container {
         grid-template-columns: 1fr;
-        gap: 16px;
+        gap: 1rem;
       }
 
-      .vs-divider {
-        order: -1;
-        align-self: center;
-        margin: 0 auto;
+      .vs-badge {
+        text-align: center;
       }
 
-      .control-actions {
-        flex-direction: column;
-      }
-
-      .card-header {
-        padding: 16px 16px 0 16px;
-      }
-
-      .card-content {
-        padding: 0 16px 16px 16px;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .main-content {
-        margin: 8px;
-        padding: 16px 12px;
-      }
-
-      .stats-grid {
+      .form-grid {
         grid-template-columns: 1fr;
-        gap: 8px;
       }
 
-      .rsvp-stats {
+      .rsvp-summary {
         grid-template-columns: 1fr;
-        gap: 8px;
-      }
-
-      .hero-actions {
-        flex-direction: column;
-        width: 100%;
-      }
-
-      .hero-actions .btn-primary,
-      .hero-actions .btn-secondary {
-        width: 100%;
       }
     }
   `]
@@ -1115,7 +1574,17 @@ export class EventDetailComponent implements OnInit {
   eventId: string = '';
   generatingMatches = false;
   statusDropdownOpen = false;
-  
+  showEditModal = false;
+  updatingEvent = false;
+  deletingEvent = false;
+  editForm: FormGroup;
+
+  timeOptions = [
+    '5:00 AM', '6:00 AM', '7:00 AM', '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM',
+    '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM',
+    '6:00 PM', '7:00 PM', '8:00 PM', '9:00 PM', '10:00 PM'
+  ];
+
   availableStatuses = [
     { value: 'published', label: 'Published' },
     { value: 'ongoing', label: 'Ongoing' },
@@ -1126,10 +1595,24 @@ export class EventDetailComponent implements OnInit {
   constructor(
     public router: Router,
     private route: ActivatedRoute,
+    private fb: FormBuilder,
     private eventService: EventService,
     private authService: AuthService,
     private modalService: ModalService
-  ) {}
+  ) {
+    this.editForm = this.fb.group({
+      title: ['', [Validators.required, Validators.minLength(3)]],
+      eventDate: ['', [Validators.required]],
+      eventTime: ['6:00 PM', [Validators.required]],
+      duration: [120, [Validators.required, Validators.min(30)]],
+      format: [''],
+      maxParticipants: [8, [Validators.required, Validators.min(2)]],
+      description: [''],
+      locationName: ['', [Validators.required]],
+      locationAddress: ['', [Validators.required]],
+      rsvpDeadline: ['', [Validators.required]]
+    });
+  }
 
   ngOnInit(): void {
     this.eventId = this.route.snapshot.params['id'];
@@ -1138,7 +1621,7 @@ export class EventDetailComponent implements OnInit {
     // Close dropdown when clicking outside
     document.addEventListener('click', (event) => {
       const target = event.target as HTMLElement;
-      const dropdown = target.closest('.status-dropdown');
+      const dropdown = target.closest('.status-selector');
       if (!dropdown && this.statusDropdownOpen) {
         this.statusDropdownOpen = false;
       }
@@ -1174,7 +1657,7 @@ export class EventDetailComponent implements OnInit {
 
   canGenerateMatches(): boolean {
     if (!this.event) return false;
-    
+
     // Only sports events can generate matches
     if (this.event.eventType === 'social') return false;
     if (!this.event.format) return false;
@@ -1271,5 +1754,131 @@ export class EventDetailComponent implements OnInit {
       hour: 'numeric',
       minute: '2-digit'
     })}`;
+  }
+
+  openEditModal(): void {
+    if (!this.event) return;
+
+    this.showEditModal = true;
+    const eventDate = new Date(this.event.dateTime);
+    const dateStr = eventDate.toISOString().slice(0, 10);
+    const timeStr = this.formatTimeToDropdown(eventDate);
+
+    this.editForm.patchValue({
+      title: this.event.title,
+      eventDate: dateStr,
+      eventTime: timeStr,
+      duration: this.event.duration,
+      format: this.event.format || '',
+      maxParticipants: this.event.maxParticipants,
+      description: this.event.description || '',
+      locationName: this.event.location.name,
+      locationAddress: this.event.location.address,
+      rsvpDeadline: new Date(this.event.rsvpDeadline).toISOString().slice(0, 10)
+    });
+  }
+
+  formatTimeToDropdown(date: Date): string {
+    let hours = date.getHours();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // 0 should be 12
+    return `${hours}:00 ${ampm}`;
+  }
+
+  convertTimeToDate(dateStr: string, timeStr: string): Date {
+    // Parse time string like "6:00 PM"
+    const [time, period] = timeStr.split(' ');
+    let [hours, minutes] = time.split(':').map(Number);
+
+    if (period === 'PM' && hours !== 12) {
+      hours += 12;
+    } else if (period === 'AM' && hours === 12) {
+      hours = 0;
+    }
+
+    const date = new Date(dateStr);
+    date.setHours(hours, minutes || 0, 0, 0);
+    return date;
+  }
+
+  convertDateToEndOfDay(dateStr: string): string {
+    // Set time to 11:59 PM (end of day)
+    const date = new Date(dateStr);
+    date.setHours(23, 59, 59, 999);
+    return date.toISOString();
+  }
+
+  closeEditModal(): void {
+    this.showEditModal = false;
+    this.editForm.reset();
+  }
+
+  submitEdit(): void {
+    if (!this.editForm.valid || !this.event) return;
+
+    this.updatingEvent = true;
+    const formValue = this.editForm.value;
+    const eventDateTime = this.convertTimeToDate(formValue.eventDate!, formValue.eventTime!);
+
+    // Use dot notation to update location fields without replacing courts
+    const eventData: any = {
+      title: formValue.title!,
+      dateTime: eventDateTime.toISOString(),
+      duration: formValue.duration!,
+      maxParticipants: formValue.maxParticipants!,
+      description: formValue.description || '',
+      'location.name': formValue.locationName!,
+      'location.address': formValue.locationAddress!,
+      rsvpDeadline: this.convertDateToEndOfDay(formValue.rsvpDeadline!)
+    };
+
+    if (formValue.format) {
+      eventData.format = formValue.format;
+    }
+
+    this.eventService.updateEvent(this.event.id, eventData).subscribe({
+      next: async (response) => {
+        this.updatingEvent = false;
+        if (response.success && response.data) {
+          this.event = response.data;
+          this.showEditModal = false;
+          await this.modalService.showAlert('Success', 'Event updated successfully!');
+        }
+      },
+      error: async (error) => {
+        this.updatingEvent = false;
+        await this.modalService.showAlert('Error', error.error?.message || 'Failed to update event');
+      }
+    });
+  }
+
+  async deleteEvent(): Promise<void> {
+    if (!this.event) return;
+
+    const result = await this.modalService.showConfirm(
+      'Delete Event',
+      `Are you sure you want to delete "${this.event.title}"?\n\n` +
+      `Date: ${this.formatDate(this.event.dateTime)}\n` +
+      `RSVPs: ${this.event.attendingCount} attending\n\n` +
+      `This action cannot be undone.`
+    );
+
+    if (result.confirmed) {
+      this.deletingEvent = true;
+      this.eventService.deleteEvent(this.event.id).subscribe({
+        next: async (response) => {
+          this.deletingEvent = false;
+          if (response.success) {
+            await this.modalService.showAlert('Success', 'Event deleted successfully!');
+            this.router.navigate(['/events']);
+          }
+        },
+        error: async (error) => {
+          this.deletingEvent = false;
+          await this.modalService.showAlert('Error', error.error?.message || 'Failed to delete event');
+        }
+      });
+    }
   }
 }

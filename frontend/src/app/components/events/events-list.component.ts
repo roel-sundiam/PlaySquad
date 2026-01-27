@@ -178,7 +178,7 @@ import { ModalService } from '../../services/modal.service';
               <button
                 class="btn-secondary"
                 (click)="editEvent(event)"
-                *ngIf="event.status === 'draft' && canManageEvent(event)"
+                *ngIf="canManageEvent(event) && !event.hasStarted"
               >
                 Edit Event
               </button>
@@ -188,6 +188,21 @@ import { ModalService } from '../../services/modal.service';
                 *ngIf="event.status === 'draft' && canManageEvent(event)"
               >
                 Publish Event
+              </button>
+              <button
+                class="btn-danger"
+                (click)="deleteEventFromList(event)"
+                *ngIf="canManageEvent(event) && !event.hasStarted"
+                [disabled]="deletingEventId === event.id"
+              >
+                <svg *ngIf="deletingEventId !== event.id" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  <line x1="10" y1="11" x2="10" y2="17"></line>
+                  <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
+                <span class="spinner" *ngIf="deletingEventId === event.id"></span>
+                {{ deletingEventId === event.id ? 'Deleting...' : 'Delete' }}
               </button>
               <span class="rsvp-closed" *ngIf="!event.isRsvpOpen && event.status !== 'draft'">RSVP Closed</span>
               <span class="draft-status" *ngIf="event.status === 'draft'">📝 Draft - Not visible to members</span>
@@ -290,13 +305,20 @@ import { ModalService } from '../../services/modal.service';
 
             <div class="form-row">
               <div class="form-group">
-                <label for="editDateTime">Date & Time</label>
-                <input type="datetime-local" id="editDateTime" formControlName="dateTime" class="form-control">
+                <label for="editEventDate">Event Date</label>
+                <input type="date" id="editEventDate" formControlName="eventDate" class="form-control">
               </div>
               <div class="form-group">
-                <label for="editDuration">Duration (minutes)</label>
-                <input type="number" id="editDuration" formControlName="duration" class="form-control" min="30" max="480">
+                <label for="editEventTime">Event Time</label>
+                <select id="editEventTime" formControlName="eventTime" class="form-control">
+                  <option *ngFor="let time of timeOptions" [value]="time">{{ time }}</option>
+                </select>
               </div>
+            </div>
+
+            <div class="form-group">
+              <label for="editDuration">Duration (minutes)</label>
+              <input type="number" id="editDuration" formControlName="duration" class="form-control" min="30" max="480">
             </div>
 
             <div class="form-row">
@@ -332,7 +354,7 @@ import { ModalService } from '../../services/modal.service';
 
             <div class="form-group">
               <label for="editRsvpDeadline">RSVP Deadline</label>
-              <input type="datetime-local" id="editRsvpDeadline" formControlName="rsvpDeadline" class="form-control">
+              <input type="date" id="editRsvpDeadline" formControlName="rsvpDeadline" class="form-control">
             </div>
 
             <div class="modal-actions">
@@ -445,13 +467,20 @@ import { ModalService } from '../../services/modal.service';
 
             <div class="form-row">
               <div class="form-group">
-                <label for="dateTime">Date & Time</label>
-                <input type="datetime-local" id="dateTime" formControlName="dateTime" class="form-control">
+                <label for="eventDate">Event Date</label>
+                <input type="date" id="eventDate" formControlName="eventDate" class="form-control">
               </div>
               <div class="form-group">
-                <label for="duration">Duration (minutes)</label>
-                <input type="number" id="duration" formControlName="duration" class="form-control" min="30" max="480">
+                <label for="eventTime">Event Time</label>
+                <select id="eventTime" formControlName="eventTime" class="form-control">
+                  <option *ngFor="let time of timeOptions" [value]="time">{{ time }}</option>
+                </select>
               </div>
+            </div>
+
+            <div class="form-group">
+              <label for="duration">Duration (minutes)</label>
+              <input type="number" id="duration" formControlName="duration" class="form-control" min="30" max="480">
             </div>
 
             <div class="form-row" *ngIf="isSportsEvent()">
@@ -492,7 +521,7 @@ import { ModalService } from '../../services/modal.service';
 
             <div class="form-group">
               <label for="rsvpDeadline">RSVP Deadline</label>
-              <input type="datetime-local" id="rsvpDeadline" formControlName="rsvpDeadline" class="form-control">
+              <input type="date" id="rsvpDeadline" formControlName="rsvpDeadline" class="form-control">
             </div>
 
             <div class="modal-actions">
@@ -1393,11 +1422,21 @@ import { ModalService } from '../../services/modal.service';
       border-radius: 8px;
       font-size: 16px;
       box-sizing: border-box;
+      background-color: white;
     }
 
     .form-control:focus {
       outline: none;
       border-color: #00C853;
+    }
+
+    select.form-control {
+      cursor: pointer;
+      appearance: none;
+      background-image: url('data:image/svg+xml;charset=UTF-8,<svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L6 6L11 1" stroke="%2364748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 40px;
     }
 
     .radio-group {
@@ -1496,6 +1535,69 @@ import { ModalService } from '../../services/modal.service';
     .btn-secondary:hover {
       background: #f8fafc;
       border-color: #cbd5e1;
+    }
+
+    .btn-danger {
+      background: transparent;
+      color: #ef4444;
+      border: 2px solid #fee2e2;
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .btn-danger::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      transition: left 0.3s ease;
+      z-index: -1;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      color: white;
+      border-color: #ef4444;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(239, 68, 68, 0.25);
+    }
+
+    .btn-danger:hover:not(:disabled)::before {
+      left: 0;
+    }
+
+    .btn-danger:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background: #f3f4f6;
+      color: #9ca3af;
+      border-color: #e5e7eb;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid #fee2e2;
+      border-top-color: #ef4444;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-right: 4px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .btn-danger svg {
+      transition: transform 0.2s ease;
+    }
+
+    .btn-danger:hover:not(:disabled) svg {
+      transform: scale(1.1);
     }
 
     .btn-outline {
@@ -1683,6 +1785,15 @@ import { ModalService } from '../../services/modal.service';
       outline: none;
       border-color: #fb923c;
       box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.1);
+    }
+
+    select.form-control {
+      cursor: pointer;
+      appearance: none;
+      background-image: url('data:image/svg+xml;charset=UTF-8,<svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L6 6L11 1" stroke="%2364748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 40px;
     }
 
     .radio-group {
@@ -2205,6 +2316,7 @@ export class EventsListComponent implements OnInit {
   submittingRsvp = false;
   creating = false;
   updating = false;
+  deletingEventId: string | null = null;
   skillLevels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
   clubCoinBalances: { [clubId: string]: number } = {};
   
@@ -2219,11 +2331,18 @@ export class EventsListComponent implements OnInit {
     notes: ['']
   });
 
+  timeOptions = [
+    '5:00 AM', '6:00 AM', '7:00 AM', '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM',
+    '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM',
+    '6:00 PM', '7:00 PM', '8:00 PM', '9:00 PM', '10:00 PM'
+  ];
+
   createEventForm = this.fb.group({
     title: ['', [Validators.required, Validators.minLength(3)]],
     club: ['', [Validators.required]],
     eventType: ['sports', [Validators.required]],
-    dateTime: ['', [Validators.required]],
+    eventDate: ['', [Validators.required]],
+    eventTime: ['6:00 PM', [Validators.required]],
     duration: [120, [Validators.required, Validators.min(30)]],
     format: ['doubles'],
     maxParticipants: [8, [Validators.required, Validators.min(2)]],
@@ -2235,7 +2354,8 @@ export class EventsListComponent implements OnInit {
 
   editEventForm = this.fb.group({
     title: ['', [Validators.required, Validators.minLength(3)]],
-    dateTime: ['', [Validators.required]],
+    eventDate: ['', [Validators.required]],
+    eventTime: ['6:00 PM', [Validators.required]],
     duration: [120, [Validators.required, Validators.min(30)]],
     format: ['doubles', [Validators.required]],
     maxParticipants: [8, [Validators.required, Validators.min(2)]],
@@ -2601,19 +2721,55 @@ export class EventsListComponent implements OnInit {
   editEvent(event: Event): void {
     this.editingEvent = event;
     this.showEditEvent = true;
-    
+
     // Pre-populate form with current event data
+    const eventDate = new Date(event.dateTime);
+    const dateStr = eventDate.toISOString().slice(0, 10);
+    const timeStr = this.formatTimeToDropdown(eventDate);
+
     this.editEventForm.patchValue({
       title: event.title,
-      dateTime: new Date(event.dateTime).toISOString().slice(0, 16),
+      eventDate: dateStr,
+      eventTime: timeStr,
       duration: event.duration,
       format: event.format,
       maxParticipants: event.maxParticipants,
       description: event.description || '',
       locationName: event.location.name,
       locationAddress: event.location.address,
-      rsvpDeadline: new Date(event.rsvpDeadline).toISOString().slice(0, 16)
+      rsvpDeadline: new Date(event.rsvpDeadline).toISOString().slice(0, 10)
     });
+  }
+
+  formatTimeToDropdown(date: Date): string {
+    let hours = date.getHours();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // 0 should be 12
+    return `${hours}:00 ${ampm}`;
+  }
+
+  convertTimeToDate(dateStr: string, timeStr: string): Date {
+    // Parse time string like "6:00 PM"
+    const [time, period] = timeStr.split(' ');
+    let [hours, minutes] = time.split(':').map(Number);
+
+    if (period === 'PM' && hours !== 12) {
+      hours += 12;
+    } else if (period === 'AM' && hours === 12) {
+      hours = 0;
+    }
+
+    const date = new Date(dateStr);
+    date.setHours(hours, minutes || 0, 0, 0);
+    return date;
+  }
+
+  convertDateToEndOfDay(dateStr: string): string {
+    // Set time to 11:59 PM (end of day)
+    const date = new Date(dateStr);
+    date.setHours(23, 59, 59, 999);
+    return date.toISOString();
   }
 
   publishEvent(event: Event): void {
@@ -2630,27 +2786,51 @@ export class EventsListComponent implements OnInit {
     });
   }
 
+  async deleteEventFromList(event: Event): Promise<void> {
+    const result = await this.modalService.showConfirm(
+      'Delete Event',
+      `Are you sure you want to delete "${event.title}"?\n\n` +
+      `Date: ${this.formatDate(event.dateTime)}\n` +
+      `RSVPs: ${event.attendingCount} attending\n\n` +
+      `This action cannot be undone.`
+    );
+
+    if (result.confirmed) {
+      this.deletingEventId = event.id;
+      this.eventService.deleteEvent(event.id).subscribe({
+        next: async (response) => {
+          this.deletingEventId = null;
+          if (response.success) {
+            await this.modalService.showAlert('Success', 'Event deleted successfully!');
+            this.loadEvents();
+          }
+        },
+        error: async (error) => {
+          this.deletingEventId = null;
+          await this.modalService.showAlert('Error', error.error?.message || 'Failed to delete event');
+        }
+      });
+    }
+  }
+
   onEditEvent(): void {
     if (this.editEventForm.valid && this.editingEvent) {
       this.updating = true;
 
       const formValue = this.editEventForm.value;
-      const eventData: Partial<CreateEventData> = {
+      const eventDateTime = this.convertTimeToDate(formValue.eventDate!, formValue.eventTime!);
+
+      // Use dot notation to update location fields without replacing courts
+      const eventData: any = {
         title: formValue.title!,
-        dateTime: formValue.dateTime!,
+        dateTime: eventDateTime.toISOString(),
         duration: formValue.duration!,
-        format: formValue.format! as any,
+        format: formValue.format!,
         maxParticipants: formValue.maxParticipants!,
         description: formValue.description || '',
-        location: {
-          name: formValue.locationName!,
-          address: formValue.locationAddress!,
-          courts: this.editingEvent.location.courts || [
-            { name: 'Court 1', isAvailable: true },
-            { name: 'Court 2', isAvailable: true }
-          ]
-        },
-        rsvpDeadline: formValue.rsvpDeadline!
+        'location.name': formValue.locationName!,
+        'location.address': formValue.locationAddress!,
+        rsvpDeadline: this.convertDateToEndOfDay(formValue.rsvpDeadline!)
       };
 
       this.eventService.updateEvent(this.editingEvent.id, eventData).subscribe({
@@ -2700,12 +2880,13 @@ export class EventsListComponent implements OnInit {
 
       const formValue = this.createEventForm.value;
       const isSportsType = formValue.eventType === 'sports' || formValue.eventType === 'tournament';
-      
+      const eventDateTime = this.convertTimeToDate(formValue.eventDate!, formValue.eventTime!);
+
       const eventData: any = {
         title: formValue.title!,
         club: formValue.club!,
         eventType: formValue.eventType!,
-        dateTime: formValue.dateTime!,
+        dateTime: eventDateTime.toISOString(),
         duration: formValue.duration!,
         maxParticipants: formValue.maxParticipants!,
         description: formValue.description || '',
@@ -2717,7 +2898,7 @@ export class EventsListComponent implements OnInit {
             { name: 'Court 2', isAvailable: true }
           ] : []
         },
-        rsvpDeadline: formValue.rsvpDeadline!
+        rsvpDeadline: this.convertDateToEndOfDay(formValue.rsvpDeadline!)
       };
 
       // Only add sports-specific fields for sports events

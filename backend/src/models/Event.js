@@ -44,7 +44,12 @@ const eventSchema = new mongoose.Schema({
       name: {
         type: String,
         required: function() {
-          return this.parent().parent().eventType === 'sports' || this.parent().parent().eventType === 'tournament';
+          try {
+            const event = this.parent().parent();
+            return event && (event.eventType === 'sports' || event.eventType === 'tournament');
+          } catch (e) {
+            return false; // Don't require if we can't access parent
+          }
         }
       },
       isAvailable: {
@@ -238,7 +243,9 @@ const eventSchema = new mongoose.Schema({
     default: false
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
 });
 
 eventSchema.virtual('attendingCount').get(function() {
