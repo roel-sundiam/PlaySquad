@@ -37,6 +37,11 @@ export class AppComponent implements OnInit, OnDestroy {
     if (authParam) {
       console.log('🎾 Tennis Club auth parameter detected');
 
+      // CRITICAL: Logout first to clear any existing user session
+      // This prevents the old cached user from being shown
+      console.log('🔓 Logging out existing user (if any) before Tennis Club auto-login');
+      this.authService.logout();
+
       try {
         // Decode base64 parameter
         const authDataJson = atob(authParam);
