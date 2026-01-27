@@ -8,6 +8,8 @@ import { ClubService, Club } from '../../services/club.service';
 import { MessageService, Message } from '../../services/message.service';
 import { AuthService } from '../../services/auth.service';
 import { SocketService } from '../../services/socket.service';
+import { EventService, Event as ClubEvent, RSVPData } from '../../services/event.service';
+import { ModalService } from '../../services/modal.service';
 
 @Component({
   selector: 'app-club-detail',
@@ -124,22 +126,29 @@ import { SocketService } from '../../services/socket.service';
         <div class="club-content">
           <!-- Tab Navigation -->
           <div class="tab-navigation" *ngIf="isMember">
-            <button 
-              class="tab-btn" 
+            <button
+              class="tab-btn"
               [class.active]="activeTab === 'info'"
               (click)="activeTab = 'info'">
               <i class="material-icons">info</i>
               Information
             </button>
-            <button 
-              class="tab-btn" 
+            <button
+              class="tab-btn"
+              [class.active]="activeTab === 'events'"
+              (click)="selectEventsTab()">
+              <i class="material-icons">event</i>
+              Events
+            </button>
+            <button
+              class="tab-btn"
               [class.active]="activeTab === 'chat'"
               (click)="activeTab = 'chat'">
               <i class="material-icons">chat</i>
               Chat
             </button>
-            <button 
-              class="tab-btn" 
+            <button
+              class="tab-btn"
               [class.active]="activeTab === 'coins'"
               (click)="activeTab = 'coins'"
               *ngIf="isAdminOrOwner">
@@ -183,7 +192,7 @@ import { SocketService } from '../../services/socket.service';
                     </span>
                   </div>
                 </div>
-                
+
                 <div class="members-section" *ngIf="club.members && club.members.length > 0">
                   <h3>Club Members</h3>
                   <div class="members-list">
@@ -196,6 +205,97 @@ import { SocketService } from '../../services/socket.service';
                         <span class="member-role" *ngIf="member.role !== 'member'">{{ member.role | titlecase }}</span>
                       </div>
                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Events Tab -->
+          <div class="tab-content" *ngIf="activeTab === 'events' && isMember">
+            <div class="content-card">
+              <div class="card-header">
+                <h2>📅 Club Events</h2>
+              </div>
+              <div class="card-content">
+                <div class="loading-section" *ngIf="loadingEvents">
+                  <p>Loading events...</p>
+                </div>
+                <div class="events-list" *ngIf="!loadingEvents">
+                  <div class="event-card" *ngFor="let event of clubEvents">
+                    <div class="event-header">
+                      <h3>{{ event.title }}</h3>
+                      <span class="event-badge" [class]="event.status">{{ event.status | titlecase }}</span>
+                    </div>
+                    <p class="event-description" *ngIf="event.description">{{ event.description }}</p>
+                    <div class="event-meta">
+                      <div class="event-detail">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <polyline points="12,6 12,12 16,14"></polyline>
+                        </svg>
+                        <span>{{ event.dateTime | date:'MMM d, y h:mm a' }}</span>
+                      </div>
+                      <div class="event-detail">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                          <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                        <span>{{ event.location.name }}</span>
+                      </div>
+                      <div class="event-detail">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                          <circle cx="9" cy="7" r="4"></circle>
+                          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        <span>{{ event.attendingCount }} / {{ event.maxParticipants }}</span>
+                      </div>
+                    </div>
+                    <div class="event-rsvp-status" *ngIf="getUserEventRsvp(event) as rsvp">
+                      <span class="rsvp-badge" [ngClass]="rsvp.status">
+                        {{ getRsvpStatusText(rsvp.status) }}
+                      </span>
+                    </div>
+                    <div class="event-actions">
+                      <button
+                        class="btn-primary"
+                        (click)="openRsvpModal(event)"
+                        *ngIf="event.isRsvpOpen && !getUserEventRsvp(event)">
+                        RSVP
+                      </button>
+                      <button
+                        class="btn-secondary"
+                        (click)="openRsvpModal(event)"
+                        *ngIf="event.isRsvpOpen && getUserEventRsvp(event)">
+                        Update RSVP
+                      </button>
+                      <span class="rsvp-closed" *ngIf="!event.isRsvpOpen">RSVP Closed</span>
+                    </div>
+
+                    <!-- Attendees List -->
+                    <div class="event-attendees" *ngIf="event.attendingCount > 0">
+                      <h4>Attendees ({{ event.attendingCount }})</h4>
+                      <div class="attendees-list">
+                        <div class="attendee-item" *ngFor="let rsvp of getSortedRsvps(event)">
+                          <div class="attendee-avatar" [style.background-image]="rsvp.user.avatar ? 'url(' + rsvp.user.avatar + ')' : 'none'">
+                            <span *ngIf="!rsvp.user.avatar" class="avatar-placeholder">{{ getInitial(rsvp.user.firstName) }}</span>
+                          </div>
+                          <div class="attendee-info">
+                            <span class="attendee-name">{{ rsvp.user.firstName }} {{ rsvp.user.lastName }}</span>
+                            <span class="attendee-status" [ngClass]="rsvp.status">{{ formatRsvpStatus(rsvp.status) }}</span>
+                          </div>
+                          <div class="attendee-meta">
+                            <span class="rsvp-date">{{ rsvp.rsvpedAt | date:'MMM d' }}</span>
+                            <span class="skill-level" *ngIf="rsvp.skillLevel">Skill: {{ rsvp.skillLevel }}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="empty-state" *ngIf="clubEvents.length === 0">
+                    <p>No events scheduled yet.</p>
                   </div>
                 </div>
               </div>
@@ -270,6 +370,65 @@ import { SocketService } from '../../services/socket.service';
           <!-- Club Coins Tab -->
           <div class="tab-content" *ngIf="activeTab === 'coins' && isAdminOrOwner && club?.id">
             <app-club-coin-wallet [clubId]="club.id"></app-club-coin-wallet>
+          </div>
+        </div>
+
+        <!-- RSVP Modal -->
+        <div class="modal" *ngIf="showRsvpModal" (click)="closeRsvpModal($event)">
+          <div class="modal-content" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <h3>RSVP to {{ selectedEvent?.title }}</h3>
+              <button class="close-btn" (click)="showRsvpModal = false">×</button>
+            </div>
+            <form [formGroup]="rsvpForm" (ngSubmit)="onRsvp()">
+              <div class="form-group">
+                <label>RSVP Status</label>
+                <div class="radio-group">
+                  <label class="radio-option">
+                    <input type="radio" formControlName="status" value="attending">
+                    <span>✓ Attending</span>
+                  </label>
+                  <label class="radio-option">
+                    <input type="radio" formControlName="status" value="maybe">
+                    <span>? Maybe</span>
+                  </label>
+                  <label class="radio-option">
+                    <input type="radio" formControlName="status" value="declined">
+                    <span>✗ Can't Attend</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-group" *ngIf="rsvpForm.get('status')?.value === 'attending' && isSportsEventForRsvp()">
+                <label for="skillLevel">Your Skill Level (1-10)</label>
+                <select id="skillLevel" formControlName="skillLevel" class="form-control">
+                  <option value="">Select your skill level</option>
+                  <option *ngFor="let level of skillLevels" [value]="level">{{ level }}</option>
+                </select>
+              </div>
+
+              <div class="form-group" *ngIf="rsvpForm.get('status')?.value === 'attending' && isSportsEventForRsvp()">
+                <label for="preferredFormat">Preferred Format</label>
+                <select id="preferredFormat" formControlName="preferredFormat" class="form-control">
+                  <option value="any">Any</option>
+                  <option value="singles">Singles</option>
+                  <option value="doubles">Doubles</option>
+                  <option value="mixed">Mixed</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="notes">Notes (optional)</label>
+                <textarea id="notes" formControlName="notes" class="form-control" rows="3" placeholder="Any special requests or notes..."></textarea>
+              </div>
+
+              <div class="modal-actions">
+                <button type="button" class="btn-secondary" (click)="showRsvpModal = false">Cancel</button>
+                <button type="submit" class="btn-primary" [disabled]="rsvpForm.invalid || submittingRsvp">
+                  {{ submittingRsvp ? 'Submitting...' : 'Submit RSVP' }}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
 
@@ -976,6 +1135,295 @@ import { SocketService } from '../../services/socket.service';
       margin-top: 4px;
     }
 
+    /* Events Tab Styles */
+    .events-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .event-card {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
+      border: 1px solid rgba(251, 146, 60, 0.3);
+      border-radius: 12px;
+      padding: 20px;
+      transition: all 200ms ease;
+    }
+
+    .event-card:hover {
+      border-color: rgba(251, 146, 60, 0.6);
+      box-shadow: 0 8px 25px rgba(251, 146, 60, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .event-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .event-header h3 {
+      margin: 0;
+      color: #1e293b;
+      font-size: 1.125rem;
+      font-weight: 600;
+    }
+
+    .event-description {
+      margin: 12px 0;
+      color: #475569;
+      font-size: 0.875rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .event-badge {
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .event-badge.published {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: white;
+    }
+
+    .event-badge.ongoing {
+      background: linear-gradient(135deg, #fb923c, #f59e0b);
+      color: white;
+    }
+
+    .event-badge.completed {
+      background: linear-gradient(135deg, #64748b, #475569);
+      color: white;
+    }
+
+    .event-badge.cancelled {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+    }
+
+    .event-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    .event-detail {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #475569;
+      font-size: 0.875rem;
+    }
+
+    .event-detail svg {
+      color: #fb923c;
+    }
+
+    .event-rsvp-status {
+      margin-bottom: 12px;
+    }
+
+    .rsvp-badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 12px;
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    .rsvp-badge.attending {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: white;
+    }
+
+    .rsvp-badge.maybe {
+      background: linear-gradient(135deg, #fb923c, #f59e0b);
+      color: white;
+    }
+
+    .rsvp-badge.declined {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+    }
+
+    .event-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .rsvp-closed {
+      color: #64748b;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #64748b;
+    }
+
+    .loading-section {
+      text-align: center;
+      padding: 40px 20px;
+      color: #64748b;
+    }
+
+    /* RSVP Form Styles */
+    .radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .radio-option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border: 1px solid rgba(251, 146, 60, 0.3);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 200ms ease;
+    }
+
+    .radio-option:hover {
+      border-color: rgba(251, 146, 60, 0.6);
+      background: rgba(251, 146, 60, 0.05);
+    }
+
+    .radio-option input[type="radio"] {
+      margin: 0;
+      cursor: pointer;
+    }
+
+    .radio-option input[type="radio"]:checked + span {
+      color: #fb923c;
+      font-weight: 600;
+    }
+
+    /* Attendees Section Styles */
+    .event-attendees {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(251, 146, 60, 0.2);
+    }
+
+    .event-attendees h4 {
+      margin: 0 0 16px 0;
+      color: #1e293b;
+      font-size: 0.875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .attendees-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .attendee-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.6);
+      border: 1px solid rgba(251, 146, 60, 0.15);
+      border-radius: 8px;
+      transition: all 200ms ease;
+    }
+
+    .attendee-item:hover {
+      background: rgba(255, 255, 255, 0.9);
+      border-color: rgba(251, 146, 60, 0.3);
+      transform: translateX(4px);
+    }
+
+    .attendee-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-size: cover;
+      background-position: center;
+      background-color: #fb923c;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 1rem;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(251, 146, 60, 0.3);
+    }
+
+    .attendee-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .attendee-name {
+      font-weight: 600;
+      color: #1e293b;
+      font-size: 0.875rem;
+    }
+
+    .attendee-status {
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 8px;
+      display: inline-block;
+      width: fit-content;
+    }
+
+    .attendee-status.attending {
+      background: rgba(34, 197, 94, 0.15);
+      color: #16a34a;
+    }
+
+    .attendee-status.maybe {
+      background: rgba(251, 146, 60, 0.15);
+      color: #ea580c;
+    }
+
+    .attendee-status.declined {
+      background: rgba(239, 68, 68, 0.15);
+      color: #dc2626;
+    }
+
+    .attendee-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+
+    .rsvp-date {
+      font-weight: 500;
+    }
+
+    .skill-level {
+      background: rgba(59, 130, 246, 0.1);
+      color: #2563eb;
+      padding: 2px 8px;
+      border-radius: 8px;
+      font-weight: 600;
+    }
+
     .loading, .error {
       display: flex;
       flex-direction: column;
@@ -1219,6 +1667,34 @@ import { SocketService } from '../../services/socket.service';
       .card-content {
         padding: 0 16px 16px 16px;
       }
+
+      .attendee-item {
+        flex-wrap: wrap;
+        padding: 10px;
+      }
+
+      .attendee-avatar {
+        width: 36px;
+        height: 36px;
+        font-size: 0.875rem;
+      }
+
+      .attendee-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .attendee-name {
+        font-size: 0.813rem;
+      }
+
+      .attendee-meta {
+        width: 100%;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 8px;
+      }
     }
 
     @media (max-width: 480px) {
@@ -1288,12 +1764,27 @@ export class ClubDetailComponent implements OnInit, OnDestroy {
   activeTab = 'info';
   clubCoinBalance: number | null = null;
 
+  // Events tab properties
+  clubEvents: ClubEvent[] = [];
+  loadingEvents = false;
+  showRsvpModal = false;
+  selectedEvent: ClubEvent | null = null;
+  submittingRsvp = false;
+  skillLevels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
   messageForm = this.fb.group({
     content: ['', [Validators.required, Validators.maxLength(500)]]
   });
 
   editForm = this.fb.group({
     content: ['', [Validators.required, Validators.maxLength(500)]]
+  });
+
+  rsvpForm = this.fb.group({
+    status: ['attending', [Validators.required]],
+    skillLevel: [''],
+    preferredFormat: ['any'],
+    notes: ['']
   });
 
   private typingTimer: any;
@@ -1305,6 +1796,8 @@ export class ClubDetailComponent implements OnInit, OnDestroy {
     private messageService: MessageService,
     private authService: AuthService,
     private socketService: SocketService,
+    private eventService: EventService,
+    private modalService: ModalService,
     private fb: FormBuilder
   ) {}
 
@@ -1312,12 +1805,24 @@ export class ClubDetailComponent implements OnInit, OnDestroy {
     console.log('🚀 ClubDetailComponent ngOnInit called');
     const clubId = this.route.snapshot.paramMap.get('id');
     console.log('🔍 Route club ID:', clubId);
-    
+
+    // Check for tab query parameter
+    const tabParam = this.route.snapshot.queryParamMap.get('tab');
+    if (tabParam === 'events') {
+      this.activeTab = 'events';
+      console.log('📅 Opening Events tab from query parameter');
+    }
+
     if (clubId) {
       console.log('✅ Valid club ID, starting load sequence...');
       this.loadClubDetails(clubId);
       // Note: loadMessages and setupSocketListeners will be called after club details load
       this.setupSocketListeners(clubId);
+
+      // Load events if Events tab is pre-selected
+      if (this.activeTab === 'events') {
+        this.loadClubEvents(clubId);
+      }
     } else {
       console.log('❌ Invalid club ID');
       this.error = 'Invalid club ID';
@@ -1682,7 +2187,7 @@ export class ClubDetailComponent implements OnInit, OnDestroy {
     }, 100);
   }
 
-  closeEditModal(event: Event): void {
+  closeEditModal(event: MouseEvent): void {
     if (event.target === event.currentTarget) {
       this.editingMessage = null;
     }
@@ -1711,5 +2216,168 @@ export class ClubDetailComponent implements OnInit, OnDestroy {
 
   formatCoins(amount: number): string {
     return amount.toLocaleString();
+  }
+
+  // Events tab methods
+  selectEventsTab(): void {
+    this.activeTab = 'events';
+    if (this.clubEvents.length === 0 && this.club) {
+      this.loadClubEvents(this.club.id);
+    }
+  }
+
+  private loadClubEvents(clubId: string): void {
+    this.loadingEvents = true;
+    this.eventService.getEvents({ club: clubId }).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.clubEvents = response.data;
+        }
+        this.loadingEvents = false;
+      },
+      error: (error) => {
+        console.error('Error loading club events:', error);
+        this.loadingEvents = false;
+      }
+    });
+  }
+
+  getUserEventRsvp(event: ClubEvent): any {
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) return null;
+    return event.rsvps?.find(rsvp => rsvp.user.id === currentUser.id);
+  }
+
+  getRsvpStatusText(status: string): string {
+    switch (status) {
+      case 'attending':
+        return '✓ You\'re attending';
+      case 'maybe':
+        return '? You might attend';
+      case 'declined':
+        return '✗ You declined';
+      default:
+        return '';
+    }
+  }
+
+  getSortedRsvps(event: ClubEvent): any[] {
+    if (!event.rsvps || event.rsvps.length === 0) return [];
+    // Filter only attending RSVPs and sort by rsvpedAt date in ascending order (earliest first)
+    return [...event.rsvps]
+      .filter(rsvp => rsvp.status === 'attending')
+      .sort((a, b) => {
+        const dateA = new Date(a.rsvpedAt).getTime();
+        const dateB = new Date(b.rsvpedAt).getTime();
+        return dateA - dateB;
+      });
+  }
+
+  formatRsvpStatus(status: string): string {
+    switch (status) {
+      case 'attending':
+        return 'Attending';
+      case 'maybe':
+        return 'Maybe';
+      case 'declined':
+        return 'Declined';
+      default:
+        return status;
+    }
+  }
+
+  getInitial(name: string): string {
+    return name ? name.charAt(0).toUpperCase() : '?';
+  }
+
+  openRsvpModal(event: ClubEvent): void {
+    this.selectedEvent = event;
+    this.showRsvpModal = true;
+
+    // Update form validators based on event type
+    const skillLevelControl = this.rsvpForm.get('skillLevel');
+    const preferredFormatControl = this.rsvpForm.get('preferredFormat');
+
+    if (event.eventType === 'sports' || event.eventType === 'tournament') {
+      skillLevelControl?.setValidators([Validators.required]);
+      preferredFormatControl?.setValidators([]);
+    } else {
+      skillLevelControl?.clearValidators();
+      preferredFormatControl?.clearValidators();
+    }
+    skillLevelControl?.updateValueAndValidity();
+    preferredFormatControl?.updateValueAndValidity();
+
+    // Pre-fill form with existing RSVP if exists
+    const existingRsvp = this.getUserEventRsvp(event);
+    if (existingRsvp) {
+      this.rsvpForm.patchValue({
+        status: existingRsvp.status,
+        skillLevel: existingRsvp.skillLevel ? existingRsvp.skillLevel.toString() : '',
+        preferredFormat: existingRsvp.preferredFormat || 'any',
+        notes: existingRsvp.notes || ''
+      });
+    } else {
+      // Pre-fill with user's default values
+      const currentUser = this.authService.currentUser;
+      if (currentUser) {
+        this.rsvpForm.patchValue({
+          status: 'attending',
+          skillLevel: currentUser.skillLevel?.toString() || '',
+          preferredFormat: currentUser.preferredFormat || 'any',
+          notes: ''
+        });
+      }
+    }
+  }
+
+  onRsvp(): void {
+    if (this.rsvpForm.valid && this.selectedEvent) {
+      this.submittingRsvp = true;
+
+      const isSportsEvent = this.selectedEvent.eventType === 'sports' || this.selectedEvent.eventType === 'tournament';
+
+      const rsvpData: RSVPData = {
+        status: this.rsvpForm.value.status as 'attending' | 'maybe' | 'declined',
+        notes: this.rsvpForm.value.notes || ''
+      };
+
+      // Only include sports-specific fields for sports events
+      if (isSportsEvent && this.rsvpForm.value.skillLevel) {
+        rsvpData.skillLevel = parseInt(this.rsvpForm.value.skillLevel);
+      }
+      if (isSportsEvent && this.rsvpForm.value.preferredFormat) {
+        rsvpData.preferredFormat = this.rsvpForm.value.preferredFormat as 'singles' | 'doubles' | 'mixed' | 'any';
+      }
+
+      this.eventService.rsvpToEvent(this.selectedEvent.id, rsvpData).subscribe({
+        next: async (response) => {
+          this.submittingRsvp = false;
+          if (response.success) {
+            this.showRsvpModal = false;
+            // Reload events to show updated RSVP
+            if (this.club) {
+              this.loadClubEvents(this.club.id);
+            }
+            await this.modalService.showAlert('Success', 'RSVP submitted successfully!');
+          }
+        },
+        error: async (error) => {
+          this.submittingRsvp = false;
+          await this.modalService.showAlert('Error', error.error?.message || 'Failed to submit RSVP');
+        }
+      });
+    }
+  }
+
+  isSportsEventForRsvp(): boolean {
+    if (!this.selectedEvent) return false;
+    return this.selectedEvent.eventType === 'sports' || this.selectedEvent.eventType === 'tournament';
+  }
+
+  closeRsvpModal(event: MouseEvent): void {
+    if (event.target === event.currentTarget) {
+      this.showRsvpModal = false;
+    }
   }
 }

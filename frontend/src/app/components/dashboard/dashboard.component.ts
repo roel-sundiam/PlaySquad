@@ -186,7 +186,7 @@ import { EventService, Event } from '../../services/event.service';
 
             <div class="card-content">
               <div class="item-list" *ngIf="upcomingEvents.length > 0; else noEvents">
-                <div class="list-item" *ngFor="let event of upcomingEvents" (click)="viewEvent(event.id)" 
+                <div class="list-item" *ngFor="let event of upcomingEvents" (click)="viewEvent(event)"
                      [class.event-cancelled]="event.status === 'cancelled'">
                   <div class="item-header">
                     <div>
@@ -444,8 +444,9 @@ export class DashboardComponent implements OnInit {
     this.router.navigate(['/clubs', clubId]);
   }
 
-  viewEvent(eventId: string): void {
-    this.router.navigate(['/events', eventId]);
+  viewEvent(event: any): void {
+    // Navigate to club page with Events tab pre-selected
+    this.router.navigate(['/clubs', event.club.id], { queryParams: { tab: 'events' } });
   }
 
   formatDate(dateString: string): string {

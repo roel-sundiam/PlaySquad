@@ -57,3 +57,11 @@ logs/
 # Uploaded files
 uploads/
 public/uploads/
+
+# Local Netlify folder
+.netlify
+
+# Debug and test scripts
+backend/debug*.js
+backend/fix*.js
+frontend/src/sample.ts
