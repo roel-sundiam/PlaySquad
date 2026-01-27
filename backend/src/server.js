@@ -26,8 +26,11 @@ const server = createServer(app);
 const io = new Server(server, {
   cors: {
     origin: process.env.NODE_ENV === 'production'
-      ? [process.env.FRONTEND_URL || "https://play-squad.netlify.app"]
-      : ["http://localhost:4200", "http://localhost:4203"],
+      ? [
+          process.env.FRONTEND_URL || "https://play-squad.netlify.app",
+          "https://tennisclubrt2-v2.netlify.app"  // Tennis Club production URL
+        ]
+      : ["http://localhost:4200", "http://localhost:4201", "http://localhost:4203"],
     methods: ["GET", "POST"]
   }
 });
@@ -48,8 +51,11 @@ const limiter = rateLimit({
 app.use(helmet());
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
-    ? [process.env.FRONTEND_URL || "https://play-squad.netlify.app"]
-    : ["http://localhost:4200", "http://localhost:4203"],
+    ? [
+        process.env.FRONTEND_URL || "https://play-squad.netlify.app",
+        "https://tennisclubrt2-v2.netlify.app"  // Tennis Club production URL
+      ]
+    : ["http://localhost:4200", "http://localhost:4201", "http://localhost:4203"],
   credentials: true
 }));
 app.use(morgan('combined'));

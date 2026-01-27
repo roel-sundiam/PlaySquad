@@ -149,6 +149,88 @@ router.post('/login', [
   }
 });
 
+// Tennis Club RT2 Auto-Login Endpoint
+router.post('/tennis-club-login', [
+  body('email')
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Please provide a valid email'),
+  body('fullName')
+    .trim()
+    .notEmpty()
+    .withMessage('Full name is required')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation errors',
+        errors: errors.array()
+      });
+    }
+
+    const { username, email, fullName, userId, role, gender } = req.body;
+
+    // Check if user already exists by email
+    let user = await User.findOne({ email: email.toLowerCase() });
+
+    if (!user) {
+      // Create new user from Tennis Club data
+      // Split fullName into firstName and lastName
+      const nameParts = fullName.trim().split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.slice(1).join(' ') || nameParts[0]; // Use firstName as lastName if only one name
+
+      // Set default password to RT2Tennis (same as Tennis Club)
+      // Users can login manually with their email + this password
+      // They can change it later via "Change Password" feature
+      const defaultPassword = 'RT2Tennis';
+
+      // Validate gender value, default to 'other' if invalid
+      const validGender = ['male', 'female', 'other'].includes(gender) ? gender : 'other';
+
+      user = await User.create({
+        firstName,
+        lastName,
+        email: email.toLowerCase(),
+        password: defaultPassword, // Will be hashed by pre-save hook
+        gender: validGender, // Use gender from Tennis Club
+        skillLevel: 5, // Default
+        preferredFormat: 'any',
+        tennisClubUserId: userId, // Store reference to Tennis Club
+        tennisClubUsername: username,
+        tennisClubRole: role
+      });
+
+      console.log(`✅ Created new user from Tennis Club: ${email}`);
+    } else {
+      // Update existing user with latest Tennis Club data
+      user.tennisClubUserId = userId;
+      user.tennisClubUsername = username;
+      user.tennisClubRole = role;
+
+      // Update gender if provided and valid
+      if (gender && ['male', 'female', 'other'].includes(gender)) {
+        user.gender = gender;
+      }
+
+      await user.save();
+
+      console.log(`✅ Updated existing user from Tennis Club: ${email}`);
+    }
+
+    // Generate JWT token and send response
+    sendTokenResponse(user, 200, res);
+  } catch (error) {
+    console.error('❌ Tennis Club login error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during Tennis Club login'
+    });
+  }
+});
+
 router.get('/me', protect, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).populate('clubs.club');

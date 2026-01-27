@@ -88,6 +88,21 @@ export class AuthService {
     );
   }
 
+  // Tennis Club RT2 Auto-Login
+  tennisClubLogin(authData: any): Observable<ApiResponse<AuthResponse>> {
+    return this.api.post<AuthResponse>('auth/tennis-club-login', authData).pipe(
+      tap(response => {
+        if (response.success && (response as any).token && (response as any).user) {
+          this.setAuthData({
+            token: (response as any).token,
+            user: (response as any).user
+          });
+          console.log('✅ Tennis Club auto-login successful');
+        }
+      })
+    );
+  }
+
   logout(): void {
     localStorage.removeItem('token');
     this.currentUserSubject.next(null);

@@ -110,6 +110,18 @@ const userSchema = new mongoose.Schema({
       type: Date,
       default: null
     }
+  },
+  // Tennis Club RT2 Integration
+  tennisClubUserId: {
+    type: String,
+    index: true
+  },
+  tennisClubUsername: {
+    type: String
+  },
+  tennisClubRole: {
+    type: String,
+    enum: ['member', 'admin', 'superadmin', 'treasurer']
   }
 }, {
   timestamps: true
