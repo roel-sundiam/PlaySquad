@@ -132,7 +132,14 @@ import { EventService, Event } from '../../services/event.service';
             </div>
 
             <div class="card-content">
-              <div class="item-list" *ngIf="userClubs.length > 0; else noClubs">
+              <!-- Loading State -->
+              <div class="loading-container" *ngIf="isLoadingClubs">
+                <div class="spinner"></div>
+                <p>Loading clubs...</p>
+              </div>
+
+              <!-- Clubs List -->
+              <div class="item-list" *ngIf="!isLoadingClubs && userClubs.length > 0">
                 <div class="list-item" *ngFor="let club of userClubs" (click)="viewClub(club.id)">
                   <div class="item-header">
                     <div>
@@ -151,21 +158,20 @@ import { EventService, Event } from '../../services/event.service';
                 </div>
               </div>
 
-              <ng-template #noClubs>
-                <div class="empty-state">
-                  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                  </svg>
-                  <h3>Join Your First Club</h3>
-                  <p>Connect with players and start competing!</p>
-                  <button class="btn-primary" (click)="router.navigate(['/clubs'])">
-                    Browse Clubs
-                  </button>
-                </div>
-              </ng-template>
+              <!-- Empty State -->
+              <div class="empty-state" *ngIf="!isLoadingClubs && userClubs.length === 0">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                <h3>Join Your First Club</h3>
+                <p>Connect with players and start competing!</p>
+                <button class="btn-primary" (click)="router.navigate(['/clubs'])">
+                  Browse Clubs
+                </button>
+              </div>
             </div>
           </section>
 
@@ -185,7 +191,14 @@ import { EventService, Event } from '../../services/event.service';
             </div>
 
             <div class="card-content">
-              <div class="item-list" *ngIf="upcomingEvents.length > 0; else noEvents">
+              <!-- Loading State -->
+              <div class="loading-container" *ngIf="isLoadingEvents">
+                <div class="spinner"></div>
+                <p>Loading events...</p>
+              </div>
+
+              <!-- Events List -->
+              <div class="item-list" *ngIf="!isLoadingEvents && upcomingEvents.length > 0">
                 <div class="list-item" *ngFor="let event of upcomingEvents" (click)="viewEvent(event)"
                      [class.event-cancelled]="event.status === 'cancelled'">
                   <div class="item-header">
@@ -194,7 +207,7 @@ import { EventService, Event } from '../../services/event.service';
                       <p class="item-meta">{{ event.club.name }} • {{ getEventTime(event.dateTime) }}</p>
                       <p class="item-meta">📍 {{ event.location.name }}</p>
                       <div class="event-status-container">
-                        <span class="event-status" 
+                        <span class="event-status"
                               [class.status-cancelled]="event.status === 'cancelled'"
                               [class.status-published]="event.status === 'published'"
                               [class.status-ongoing]="event.status === 'ongoing'"
@@ -223,21 +236,20 @@ import { EventService, Event } from '../../services/event.service';
                 </div>
               </div>
 
-              <ng-template #noEvents>
-                <div class="empty-state">
-                  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                  </svg>
-                  <h3>No Upcoming Events</h3>
-                  <p>Check out what's happening in your clubs!</p>
-                  <button class="btn-primary" (click)="router.navigate(['/events'])">
-                    Browse Events
-                  </button>
-                </div>
-              </ng-template>
+              <!-- Empty State -->
+              <div class="empty-state" *ngIf="!isLoadingEvents && upcomingEvents.length === 0">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <h3>No Upcoming Events</h3>
+                <p>Check out what's happening in your clubs!</p>
+                <button class="btn-primary" (click)="router.navigate(['/events'])">
+                  Browse Events
+                </button>
+              </div>
             </div>
           </section>
         </div>
@@ -387,13 +399,49 @@ import { EventService, Event } from '../../services/event.service';
       box-shadow: 0 2px 8px rgba(34, 197, 94, 0.4);
     }
 
+    // Loading Spinner
+    .loading-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #e2e8f0;
+      border-top-color: #00C853;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .loading-container p {
+      margin-top: 1rem;
+      color: #64748b;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
   `]
 })
 export class DashboardComponent implements OnInit {
   user: User | null = null;
   userClubs: Club[] = [];
   upcomingEvents: Event[] = [];
-  
+
+  // Loading states
+  isLoadingClubs: boolean = false;
+  isLoadingEvents: boolean = false;
+
   // Animation properties
   animatedSkillWidth: number = 0;
   showSkillAnimation: boolean = false;
@@ -417,19 +465,33 @@ export class DashboardComponent implements OnInit {
   }
 
   loadUserData(): void {
+    // Load clubs with loading state
+    this.isLoadingClubs = true;
     this.clubService.getUserClubs().subscribe({
       next: (response) => {
         if (response.success && response.data) {
           this.userClubs = response.data.slice(0, 3);
         }
+        this.isLoadingClubs = false;
+      },
+      error: (error) => {
+        console.error('Error loading clubs:', error);
+        this.isLoadingClubs = false;
       }
     });
 
+    // Load events with loading state
+    this.isLoadingEvents = true;
     this.eventService.getEvents({ upcoming: true, limit: 5 }).subscribe({
       next: (response) => {
         if (response.success && response.data) {
           this.upcomingEvents = response.data;
         }
+        this.isLoadingEvents = false;
+      },
+      error: (error) => {
+        console.error('Error loading events:', error);
+        this.isLoadingEvents = false;
       }
     });
   }

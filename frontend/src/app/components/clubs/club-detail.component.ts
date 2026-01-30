@@ -128,17 +128,17 @@ import { ModalService } from '../../services/modal.service';
           <div class="tab-navigation" *ngIf="isMember">
             <button
               class="tab-btn"
-              [class.active]="activeTab === 'info'"
-              (click)="activeTab = 'info'">
-              <i class="material-icons">info</i>
-              Information
-            </button>
-            <button
-              class="tab-btn"
               [class.active]="activeTab === 'events'"
               (click)="selectEventsTab()">
               <i class="material-icons">event</i>
               Events
+            </button>
+            <button
+              class="tab-btn"
+              [class.active]="activeTab === 'info'"
+              (click)="activeTab = 'info'">
+              <i class="material-icons">info</i>
+              Information
             </button>
             <button
               class="tab-btn"
@@ -1761,7 +1761,7 @@ export class ClubDetailComponent implements OnInit, OnDestroy {
   editingMessage: Message | null = null;
   sending = false;
   saving = false;
-  activeTab = 'info';
+  activeTab = 'events';
   clubCoinBalance: number | null = null;
 
   // Events tab properties
